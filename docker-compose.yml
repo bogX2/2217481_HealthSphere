@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  postgres-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: healthsphere
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-db
+    environment:
+      - DB_NAME=healthsphere
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres-db
+      - JWT_SECRET=supersecretjwt
+
+volumes:
+  pgdata:
