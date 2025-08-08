@@ -28,5 +28,15 @@ services:
       - DB_HOST=postgres-db
       - JWT_SECRET=supersecretjwt
 
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8081
+      - FRONTEND_URL=http://localhost:3001
+    depends_on:
+      - user-service
+
 volumes:
   pgdata:
