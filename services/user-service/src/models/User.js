@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../index');
+const sequelize = require('../config/database');
 
 const User = sequelize.define('User', {
   name: { type: DataTypes.STRING },
@@ -8,7 +8,7 @@ const User = sequelize.define('User', {
   role: { type: DataTypes.ENUM('patient', 'doctor', 'admin'), defaultValue: 'patient' }
 });
 
-User.sync(); // crea la tabella se non esiste
+//User.sync(); // crea la tabella se non esiste
 
 module.exports = User;
-    console.log('Connected to PostgreSQL');
+//    console.log('Connected to PostgreSQL');

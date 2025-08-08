@@ -1,4 +1,4 @@
-version: "3.8"
+#version: "3.8"
 
 services:
   postgres-db:
@@ -19,6 +19,8 @@ services:
       - "8081:8081"
     depends_on:
       - postgres-db
+    env_file:
+      - ./services/user-service/.env
     environment:
       - DB_NAME=healthsphere
       - DB_USER=postgres
