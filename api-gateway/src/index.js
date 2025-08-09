@@ -24,7 +24,7 @@ app.use(limiter);
 // Service discovery - for now hardcoded, later can use env vars or service registry
 const services = {
   user: process.env.USER_SERVICE_URL || 'http://user-service:8081',
-  // doctor: process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:8082',
+  doctor: process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:8082',
   // appointment: process.env.APPOINTMENT_SERVICE_URL || 'http://appointment-service:8083'
 };
 
@@ -57,6 +57,13 @@ app.use('/api/users', createProxyMiddleware({
   pathRewrite: {
     '^/api/users': '/api/users'
   }
+}));
+
+// DOCTOR SERVICE routes
+app.use('/api/doctors', createProxyMiddleware({
+  target: services.doctor,
+  ...proxyOptions,
+  pathRewrite: { '^/api/doctors': '/api/doctors' }
 }));
 
 // Health check endpoint

@@ -28,6 +28,17 @@ services:
       - DB_HOST=postgres-db
       - JWT_SECRET=supersecretjwt
 
+  doctor-service:
+    build: ./services/doctor-service
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./services/doctor-service/.env
+    depends_on:
+      - postgres-db
+    volumes:
+      - ./services/doctor-service/uploads:/app/uploads
+
   api-gateway:
     build: ./api-gateway
     ports:
