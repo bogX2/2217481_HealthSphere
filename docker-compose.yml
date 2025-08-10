@@ -39,6 +39,22 @@ services:
     volumes:
       - ./services/doctor-service/uploads:/app/uploads
 
+  appointment-service:
+    build: ./services/appointment-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./services/appointment-service/.env
+    environment:
+      - DB_HOST=postgres-db
+      - DB_NAME=healthsphere
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=supersecretjwt
+    depends_on:
+      - postgres-db
+
+
   api-gateway:
     build: ./api-gateway
     ports:

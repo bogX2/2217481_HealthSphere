@@ -12,7 +12,7 @@ const Doctor = sequelize.define('Doctor', {
   rating: { type: DataTypes.FLOAT, defaultValue: 0.0 }, // aggregated rating
   experienceYears: { type: DataTypes.INTEGER, defaultValue: 0 },
   credentials: { type: DataTypes.JSONB, defaultValue: {} }, // e.g. { licenseNumber, issuedBy }
-  verificationStatus: { type: DataTypes.ENUM('pending','approved','rejected'), defaultValue: 'pending' },
+  verificationStatus: { type: DataTypes.ENUM('pending','approved','rejected'), defaultValue: 'approved' },
   profilePhoto: { type: DataTypes.STRING }, // path to uploaded photo
   profile: { type: DataTypes.JSONB, defaultValue: {} }, // flexible extra fields
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },

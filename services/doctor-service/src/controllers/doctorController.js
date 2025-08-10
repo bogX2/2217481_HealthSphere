@@ -94,7 +94,7 @@ const getAvailability = async (req, res) => {
   }
 };
 
-// ---- Search doctors ----
+// ---- Search doctors ---- IT WILL FIND ONLY DOCTORS THAT HAVE BEEN APPROVED
 // supports: specialty, location, language, minRating, maxFee, availableOn (YYYY-MM-DD)
 const searchDoctors = async (req, res) => {
   try {
