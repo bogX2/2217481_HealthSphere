@@ -1,15 +1,35 @@
 const User = require('../models/User');
+const PatientProfile = require('../models/PatientProfile');
+const DoctorProfile = require('../models/DoctorProfile');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    // REMOVE THIS LINE: const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({ name, email, password, role }); // Pass plain password
+    const {
+      name,
+      surname,
+      email,
+      password,
+      role
+      //profileData     // per paziente: { phone, birthDate, birthPlace, fiscalCode 
+    } = req.body;
+    console.log('Request body:', req.body);
+    // Creo l'utente con tutti i dati base
+    const user = await User.create({ firstName: name, lastName: surname, email, password, role });
+
+    if (role === 'patient') {
+      await PatientProfile.create({ userId: user.id, ...profileData });
+    } else if (role === 'doctor') {
+      const {specialization, certifications, experience} = req.body;
+      await DoctorProfile.create({ userId: user.id, specialization, certifications, experience})        
+    }
+
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+  console.error('Errore di registrazione:', err);
+  res.status(400).json({ error: err.message, details: err.errors });
   }
 };
 

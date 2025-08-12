@@ -1,6 +1,8 @@
 const sequelize = require('../config/database');
 const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const PatientProfile = require('./PatientProfile');
+const DoctorProfile = require('./DoctorProfile');
 
 const User = sequelize.define('User', {
   id: {
@@ -8,8 +10,11 @@ const User = sequelize.define('User', {
     primaryKey: true,
     autoIncrement: true
   },
-  // kept simple for compatibility with your auth flow
-  name: {
+  firstName: {                   
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  lastName: {                    
     type: DataTypes.STRING,
     allowNull: false
   },
@@ -28,6 +33,23 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('patient', 'doctor', 'admin'),
     allowNull: false,
     defaultValue: 'patient'
+  },
+  phoneNumber: {                  
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  birthDate: {                   
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  birthPlace: {                   
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  fiscalCode: {                  
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
   },
   // flexible profile store for first/last names, address, etc.
   profile: {
@@ -72,4 +94,11 @@ User.prototype.comparePassword = async function (plain) {
   return bcrypt.compare(plain, this.password);
 };
 
+User.hasOne(PatientProfile, { foreignKey: 'userId' });
+PatientProfile.belongsTo(User, { foreignKey: 'userId' });
+
+User.hasOne(DoctorProfile, { foreignKey: 'userId' });
+DoctorProfile.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = User;
+
