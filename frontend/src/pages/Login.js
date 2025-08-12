@@ -2,7 +2,7 @@ import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
-import { useAuth } from '../path/to/AuthProvider';  // metti il path corretto
+import { useAuth } from '../auth/AuthProvider.js';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -24,14 +24,15 @@ const Login = () => {
         onSubmit={async (values, { setSubmitting, setStatus }) => {
           setStatus(null);
           try {
-            const response = await axios.post('/login', values);
+            //const response = await axios.post('/login', values);
+            const response = await axios.post('http://localhost:8081/api/auth/login', values);
             const { token } = response.data;
 
             login(token);  // aggiorna context e salva token
 
             setStatus({ success: 'Login effettuato con successo!' });
 
-            navigate('/profile'); // redirect a profile dopo login
+            //navigate('/profile'); // redirect a profile dopo login
           } catch (error) {
             if (error.response && error.response.status === 401) {
               setStatus({ error: 'Credenziali non valide' });
