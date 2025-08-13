@@ -12,32 +12,18 @@ const RegisterSchema = Yup.object().shape({
   surname: Yup.string().required('Cognome obbligatorio'),
   email: Yup.string().email('Email non valida').required('Email obbligatoria'),
   password: Yup.string().min(6, 'Minimo 6 caratteri').required('Password obbligatoria'),
-  phone: Yup.string().required('Telefono obbligatorio'),
+  phoneNumber: Yup.string().required('Telefono obbligatorio'),
   birthDate: Yup.date().required('Data di nascita obbligatoria'),
   birthPlace: Yup.string().required('Luogo di nascita obbligatorio'),
   fiscalCode: Yup.string().required('Codice fiscale obbligatorio'),
-  specialties: Yup.string().when('role', (role, schema) => {
-    return role === 'doctor'
-      ? schema.required('Specialità obbligatorie per i dottori')
-      : schema.notRequired();
-  }),
-  credentials: Yup.string().when('role', (role, schema) => {
-    return role === 'doctor'
-      ? schema.required('Credenziali obbligatorie per i dottori')
-      : schema.notRequired();
-  }),
-  experience: Yup.string().when('role', (role, schema) => {
-    return role === 'doctor'
-      ? schema.required('Esperienza obbligatoria per i dottori')
-      : schema.notRequired();
-  }),
+ 
 });
 
 const Register = () => {
   const navigate = useNavigate();
 
   return (
-    <div>
+    <div className="login-page">
       <header className="login-header">
         <img src="/logo192.png" alt="HealthSphere Logo" className="login-logo" />
         <h1 className="login-title">HealthSphere</h1>
@@ -54,13 +40,10 @@ const Register = () => {
             surname: '',
             email: '',
             password: '',
-            phone: '',
+            phoneNumber: '',
             birthDate: '',
             birthPlace: '',
             fiscalCode: '',
-            specialties: '',
-            credentials: '',
-            experience: '',
           }}
           validationSchema={RegisterSchema}
           onSubmit={async (values, { setSubmitting, setStatus }) => {
@@ -113,8 +96,8 @@ const Register = () => {
 
               <div className="form-group">
                 <label>Phone Number</label>
-                <Field type="text" name="phone" className="form-input" />
-                <ErrorMessage name="phone" component="div" className="error-text" />
+                <Field type="text" name="phoneNumber" className="form-input" />
+                <ErrorMessage name="phoneNumber" component="div" className="error-text" />
               </div>
 
               <div className="form-group">
@@ -135,27 +118,7 @@ const Register = () => {
                 <ErrorMessage name="fiscalCode" component="div" className="error-text" />
               </div>
 
-              {values.role === 'doctor' && (
-                <>
-                  <div className="form-group">
-                    <label>Specialization</label>
-                    <Field type="text" name="specialization" className="form-input" />
-                    <ErrorMessage name="specialization" component="div" className="error-text" />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Certifications</label>
-                    <Field type="text" name="certifications" className="form-input" />
-                    <ErrorMessage name="certifications" component="div" className="error-text" />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Experience</label>
-                    <Field as="textarea" name="experience" className="form-input" />
-                    <ErrorMessage name="experience" component="div" className="error-text" />
-                  </div>
-                </>
-              )}
+            
 
               <button type="submit" disabled={isSubmitting} className="submit-btn">
                 {isSubmitting ? 'Caricamento...' : 'Registrati'}

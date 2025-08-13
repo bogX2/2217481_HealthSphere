@@ -1,16 +1,16 @@
 /* Register.css */
 
-/* Container generale della pagina */
+
 .login-page {
   min-height: 100vh;
-  background: #c7ecee; /* stesso verde acqua chiaro della homepage */
-  color: #1f4d3d; /* verde scuro testo */
+  background: #c7ecee; 
+  color: #1f4d3d; 
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 3rem 1.5rem;
 }
-    
+
 .login-container {
   max-width: 420px;
   margin: 40px auto;

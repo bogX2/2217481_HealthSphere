@@ -12,19 +12,22 @@ exports.register = async (req, res) => {
       surname,
       email,
       password,
-      role
-      //profileData     // per paziente: { phone, birthDate, birthPlace, fiscalCode 
+      role,
+      phoneNumber,
+      birthDate,
+      birthPlace,
+      fiscalCode,
     } = req.body;
     console.log('Request body:', req.body);
     // Creo l'utente con tutti i dati base
-    const user = await User.create({ firstName: name, lastName: surname, email, password, role });
+    const user = await User.create({ firstName: name, lastName: surname, email, password, role, phoneNumber, birthDate, birthPlace, fiscalCode});
 
+    //se ho un paziente, creo anche il suo profilo personale in profileData
     if (role === 'patient') {
-      await PatientProfile.create({ userId: user.id, ...profileData });
-    } else if (role === 'doctor') {
-      const {specialization, certifications, experience} = req.body;
-      await DoctorProfile.create({ userId: user.id, specialization, certifications, experience})        
+      await PatientProfile.create({ userId: user.id });
     }
+
+    //se è dottore, non faccio niente altro
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
