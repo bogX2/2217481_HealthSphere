@@ -8,13 +8,16 @@ const Profile = () => {
   const [selectedOption, setSelectedOption] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    axios.get('http://localhost:8081/api/users/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setUser(res.data.user))
-    .catch(() => setError('Errore nel caricamento del profilo'));
-  }, []);
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  axios.get('http://localhost:8081/api/users/profile', {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(res => setUser(res.data.user))
+  .catch(() => setError('Errore nel caricamento del profilo'));
+  }, []); // se vuoi supportare cambio utente senza ricaricare, aggiungi token come dipendenza
+
 
   if (error) return <div className="error-text">{error}</div>;
   if (!user) return <div>Caricamento...</div>;

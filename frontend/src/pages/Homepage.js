@@ -1,37 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Homepage.css'
+import styles from '../styles/Homepage.module.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [visible, setVisible] = useState(true);
+
+  const handleHide = (path) => {
+    setVisible(false);
+    setTimeout(() => navigate(path), 500); // aspetta che l'animazione finisca
+  };
 
   return (
-    <div className="home-page">
-      
-      <header className="home-header">
-       
-      </header>
-
-      <main className="home-main">
-        <img
-          src="/logo192.png"
-          alt="HealthSphere Logo"
-          className="home-logo"
-        />
-        <h1 className="home-title">HealthSphere</h1>
-        <p className="home-description">
-          Your personal healthcare management platform — easy, secure, and efficient.
-        </p>
-
-        <div className="home-buttons">
-          <button onClick={() => navigate('/login')} className="btn primary-btn">
-            Login
-          </button>
-          <button onClick={() => navigate('/register')} className="btn secondary-btn">
-            Register
-          </button>
-        </div>
-      </main>
+    <div className={`${styles.container} ${!visible ? styles.hidden : ''}`}>
+      <img src="/logo192.png" alt="HealthSphere Logo" className={styles.logo} />
+      <h1 className={styles.title}>HealthSphere</h1>
+      <p className={styles.description}>
+        Your personal healthcare management platform — easy, secure, and efficient.
+      </p>
+      <div className={styles.buttons}>
+        <button onClick={() => handleHide('/login')} className={`${styles.btn} ${styles.primaryBtn}`}>
+          Login
+        </button>
+        <button onClick={() => handleHide('/register')} className={`${styles.btn} ${styles.secondaryBtn}`}>
+          Register
+        </button>
+      </div>
     </div>
   );
 };
