@@ -12,11 +12,13 @@ const User = sequelize.define('User', {
   },
   firstName: {                   
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    defaultValue: '' // Provide a default for existing rows
   },
   lastName: {                    
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    defaultValue: '' // Provide a default for existing rows
   },
   email: {
     type: DataTypes.STRING,
