@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import HomePage from './pages/Homepage';
 import { AuthProvider } from './auth/AuthProvider';
+import InfoManagement from './pages/InfoManagement';
 
 
 function App() {
@@ -18,6 +19,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/infomanagement" element={<InfoManagement />} />
+
         </Routes>
       </Router>
     </AuthProvider>

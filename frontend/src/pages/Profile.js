@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Profile.css';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
+  const navigate = useNavigate()
 
   useEffect(() => {
   const token = localStorage.getItem('token');
@@ -42,7 +44,7 @@ return (
         <ul className="options-list profile-buttons">
           {user.role === 'patient' && (
             <>
-              <li><button className="btn primary-btn" onClick={() => handleOptionClick('editProfile')}>Modifica dati personali</button></li>
+              <li><button className="btn primary-btn" onClick={() => navigate('/infomanagement')}>Modifica dati personali</button></li>
               <li><button className="btn primary-btn" onClick={() => handleOptionClick('bookAppointment')}>Prenota un appuntamento</button></li>
               <li><button className="btn primary-btn" onClick={() => handleOptionClick('startChat')}>Inizia una nuova chat</button></li>
               <li><button className="btn primary-btn" onClick={() => handleOptionClick('searchDoctors')}>Cerca dottori</button></li>
@@ -51,7 +53,7 @@ return (
 
           {user.role === 'doctor' && (
             <>
-              <li><button className="btn secondary-btn" onClick={() => handleOptionClick('editProfile')}>Modifica dati personali</button></li>
+              <li><button className="btn secondary-btn" onClick={() => navigate('/infomanagement')}>Modifica dati personali</button></li>
               <li><button className="btn secondary-btn" onClick={() => handleOptionClick('viewAppointments')}>Visualizza appuntamenti</button></li>
               <li><button className="btn secondary-btn" onClick={() => handleOptionClick('manageChats')}>Gestisci chat</button></li>
             </>
@@ -59,14 +61,6 @@ return (
         </ul>
       </nav>
 
-      <section className="selected-option">
-        {selectedOption === 'editProfile' && <div>Modulo modifica dati qui</div>}
-        {selectedOption === 'bookAppointment' && <div>Modulo prenotazione qui</div>}
-        {selectedOption === 'startChat' && <div>Modulo chat qui</div>}
-        {selectedOption === 'searchDoctors' && <div>Modulo ricerca dottori qui</div>}
-        {selectedOption === 'viewAppointments' && <div>Appuntamenti</div>}
-        {selectedOption === 'manageChats' && <div>Chat</div>}
-      </section>
     </div>
   </>
 );
