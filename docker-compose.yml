@@ -53,6 +53,21 @@ services:
       - JWT_SECRET=supersecretjwt
     depends_on:
       - postgres-db
+    
+  communication-service:
+    build: ./services/communication-service
+    ports:
+      - "8084:8084"
+    environment:
+      - DB_HOST=postgres-db
+      - DB_NAME=healthsphere
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=supersecretjwt
+      - USER_SERVICE_URL=http://user-service:8081
+      - FRONTEND_URL=http://localhost:3001
+    depends_on:
+      - postgres-db
 
 
   api-gateway:

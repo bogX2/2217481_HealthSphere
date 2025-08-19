@@ -1,0 +1,47 @@
+/* frontend\src\components\Chat\ChatContainer.css */
+.chat-container {
+    display: flex;
+    height: 80vh; /* Adjust as needed */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.chat-container.error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: red;
+    font-weight: bold;
+}
+
+.chat-sidebar {
+    width: 30%;
+    border-right: 1px solid #eee;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+}
+
+.chat-sidebar h2 {
+    padding: 15px;
+    margin: 0;
+    border-bottom: 1px solid #ddd;
+    background-color: #f0f0f0;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.no-chat-selected {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #888;
+    font-size: 1.2em;
+}

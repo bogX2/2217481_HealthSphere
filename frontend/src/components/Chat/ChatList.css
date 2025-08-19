@@ -1,0 +1,12 @@
+/* frontend\src\components\Chat\ChatList.css */
+.chat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.no-chats {
+    padding: 20px;
+    text-align: center;
+    color: #888;
+}

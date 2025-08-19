@@ -1,0 +1,43 @@
+/* frontend\src\components\Chat\MessageItem.css */
+.message-item {
+    margin-bottom: 15px;
+    display: flex;
+}
+
+.message-item.own {
+    justify-content: flex-end;
+}
+
+.message-item.other {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message-item.own .message-content {
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-item.other .message-content {
+    background-color: #e9ecef;
+    color: black;
+    border-bottom-left-radius: 4px;
+}
+
+.message-text {
+    word-wrap: break-word;
+    margin-bottom: 5px;
+}
+
+.message-time {
+    font-size: 0.75em;
+    opacity: 0.8;
+    text-align: right;
+}

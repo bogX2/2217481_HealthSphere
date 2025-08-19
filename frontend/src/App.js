@@ -8,22 +8,23 @@ import Profile from './pages/Profile';
 import HomePage from './pages/Homepage';
 import { AuthProvider } from './auth/AuthProvider';
 import InfoManagement from './pages/InfoManagement';
+import ChatContainer from './components/Chat/ChatContainer';
 
 
 function App() {
   return (
-    <AuthProvider>
     <Router>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<HomePage />} /> 
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/infomanagement" element={<InfoManagement />} />
-
+          <Route path="/chat" element={<ChatContainer />} />
         </Routes>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

@@ -1,0 +1,47 @@
+/* frontend\src\components\Chat\ChatListItem.css */
+.chat-list-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-list-item:hover {
+    background-color: #e9e9e9;
+}
+
+.chat-list-item.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.chat-list-item.active:hover {
+    background-color: #0056b3; /* Darker shade for active hover */
+}
+
+.chat-list-item-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-list-item-info .last-message-preview {
+    margin: 0;
+    font-size: 0.9em;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-list-item.active .last-message-preview {
+    color: #cce5ff; /* Lighter color for active item */
+}
+
+.chat-list-item-info .last-message-time {
+    font-size: 0.8em;
+    color: #999;
+    float: right;
+}

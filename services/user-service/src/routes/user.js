@@ -4,7 +4,8 @@ const {
   updateProfile,
   getUserProfile,
   getAllUsers,
-  deactivateUser
+  deactivateUser,
+  getUserByIdPublic
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -16,5 +17,8 @@ router.put('/profile', authenticateToken, updateProfile);
 // Admin endpoints (protected + role check)
 router.get('/', authenticateToken, authorizeRole(['admin']), getAllUsers);
 router.patch('/:userId/deactivate', authenticateToken, authorizeRole(['admin']), deactivateUser);
+
+// Public endpoint for other services
+router.get('/:id/public', getUserByIdPublic);
 
 module.exports = router;

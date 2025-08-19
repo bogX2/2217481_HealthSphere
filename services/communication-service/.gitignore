@@ -1,0 +1,13 @@
+# Ignora la cartella delle dipendenze
+node_modules/
+
+# Ignora i file temporanei di log
+npm-debug.log
+yarn-error.log
+
+# Ignora file di ambiente (per sicurezza)
+#.env
+
+# Ignora build temporanee (se presenti)
+dist/
+build/

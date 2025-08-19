@@ -1,0 +1,5 @@
+/* frontend\src\components\Chat\MessageList.css */
+.message-list {
+    display: flex;
+    flex-direction: column;
+}

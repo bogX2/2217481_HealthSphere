@@ -109,9 +109,31 @@ const deactivateUser = async (req, res) => {
   }
 };
 
+
+// --- function for user existence check ---
+const getUserByIdPublic = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    // Find user by ID, excluding sensitive information
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'email', 'firstName', 'lastName', 'role'] // Select only necessary public fields
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user); // Return public user data
+  } catch (err) {
+    console.error('Error fetching user by ID (public):', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   updateProfile,
   getUserProfile,
   getAllUsers,
-  deactivateUser
+  deactivateUser,
+  getUserByIdPublic
 };

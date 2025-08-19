@@ -25,7 +25,8 @@ app.use(limiter);
 const services = {
   user: process.env.USER_SERVICE_URL || 'http://user-service:8081',
   doctor: process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:8082',
-  appointment: process.env.APPOINTMENT_SERVICE_URL || 'http://appointment-service:8083'
+  appointment: process.env.APPOINTMENT_SERVICE_URL || 'http://appointment-service:8083',
+  communication: process.env.COMMUNICATION_SERVICE_URL || 'http://communication-service:8084'
 };
 
 // Proxy middleware options
@@ -74,6 +75,16 @@ app.use('/api/appointments', createProxyMiddleware({
     '^/api/appointments': '/api/appointments'
   }
 }));
+
+// Add proxy middleware for communication service routes
+app.use('/api/communication', createProxyMiddleware({
+  target: services.communication,
+  ...proxyOptions,
+  pathRewrite: {
+    '^/api/communication': '/api/communication' 
+  }
+}));
+
 
 
 // Health check endpoint
