@@ -12,8 +12,10 @@ const {
   verifyDoctor,
   getDoctor
 } = require('../controllers/doctorController');
+const relationshipController = require('../controllers/relationshipController');
 
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
+//const { serviceAuth } = require('../middleware/serviceAuth');
 
 const uploadsDir = path.resolve(__dirname, '../../uploads');
 const storage = multer.diskStorage({
@@ -48,5 +50,18 @@ router.get('/:doctorId/availability', getAvailability);
 
 // admin verify
 router.patch('/:doctorId/verify', authenticateToken, authorizeRole(['admin']), verifyDoctor);
+
+// Relationship management endpoints
+router.post('/relationships/request', authenticateToken, authorizeRole(['patient']), relationshipController.requestRelationship);
+router.get('/relationships/pending', authenticateToken, authorizeRole(['doctor']), relationshipController.getPendingRelationships);
+router.put('/relationships/:id/accept', authenticateToken, authorizeRole(['doctor']), relationshipController.acceptRelationship);
+router.put('/relationships/:id/reject', authenticateToken, authorizeRole(['doctor']), relationshipController.rejectRelationship);
+router.put('/relationships/:id/terminate', authenticateToken, relationshipController.terminateRelationship);
+router.get('/relationships/doctor', authenticateToken, authorizeRole(['doctor']), relationshipController.getDoctorRelationships);
+router.get('/relationships/patient', authenticateToken, authorizeRole(['patient']), relationshipController.getPatientRelationships);
+router.get('/relationships/check/:userId1/:userId2', authenticateToken, relationshipController.checkRelationship);
+
+// Allow service-to-service calls for profile creation
+//router.post('/', serviceAuth, upsertDoctor);
 
 module.exports = router;

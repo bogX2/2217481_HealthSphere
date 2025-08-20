@@ -25,4 +25,16 @@ const Doctor = sequelize.define('Doctor', {
   ]
 });
 
+Doctor.associate = (models) => {
+  Doctor.belongsTo(models.User, {
+    foreignKey: 'userId',
+    as: 'user'
+  });
+  
+  Doctor.hasMany(models.Availability, {
+    foreignKey: 'doctorId',
+    as: 'availability'
+  });
+};
+
 module.exports = Doctor;

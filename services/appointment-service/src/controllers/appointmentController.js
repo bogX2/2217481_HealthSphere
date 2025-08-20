@@ -6,7 +6,7 @@ const AppointmentSlot = require('../models/AppointmentSlot');
 exports.createSlot = async (req, res) => {
   try {
     // user must be a doctor (route already checks role, but double-check)
-    const doctorId = req.user.userId;
+    const doctorId = req.user.id;
     const { date, startTime, endTime } = req.body;
     const slot = await AppointmentSlot.create({ doctorId, date, startTime, endTime });
     res.json({ slot });
@@ -19,7 +19,7 @@ exports.createSlot = async (req, res) => {
 exports.bookAppointment = async (req, res) => {
   try {
     const slotId = req.body.slotId;
-    const patientId = req.user.userId;
+    const patientId = req.user.id;
 
     const slot = await AppointmentSlot.findByPk(slotId);
     if (!slot) return res.status(404).json({ error: 'Slot not found' });
@@ -42,7 +42,7 @@ exports.bookAppointment = async (req, res) => {
 
 exports.getDoctorAppointments = async (req, res) => {
   try {
-    const callerId = req.user.userId;
+    const callerId = req.user.id;
     const { doctorId } = req.params;
 
     // allow if admin or if callerId === doctorId
@@ -57,7 +57,7 @@ exports.getDoctorAppointments = async (req, res) => {
 
 exports.getPatientAppointments = async (req, res) => {
   try {
-    const callerId = req.user.userId;
+    const callerId = req.user.id;
     const { patientId } = req.params;
 
     if (req.user.role !== 'admin' && parseInt(patientId) !== callerId) {

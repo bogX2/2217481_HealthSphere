@@ -145,32 +145,23 @@ exports.getUserChats = async (req, res) => {
 //
 async function validateUserRelationship(userId1, userId2) {
   try {
-    // Make service-to-service call to appointment service
-    const response = await axios.get(
-      `${process.env.APPOINTMENT_SERVICE_URL}/api/appointments/relationship/${userId1}/${userId2}`,
-      {
-        timeout: 5000,
-        // No need for authorization here - service-to-service calls should have their own auth mechanism
-        headers: {
-          'Internal-Service-Token': process.env.INTERNAL_SERVICE_TOKEN // Optional: add service-to-service security
-        }
-      }
-    );
-    
-    return response.data.hasRelationship;
+    // Check both appointments AND doctor-patient relationships
+    const [appointmentsResponse, relationshipsResponse] = await Promise.all([
+      // Check appointments
+      axios.get(`${process.env.APPOINTMENT_SERVICE_URL}/api/appointments/relationship/${userId1}/${userId2}`, {
+        headers: { 'Internal-Service-Token': process.env.INTERNAL_SERVICE_TOKEN }
+      }),
+      // Check doctor-patient relationships
+      axios.get(`${process.env.DOCTOR_SERVICE_URL}/api/doctors/relationships/check/${userId1}/${userId2}`, {
+        headers: { 'Internal-Service-Token': process.env.INTERNAL_SERVICE_TOKEN }
+      })
+    ]);
+
+    // Return true if either check shows a valid relationship
+    return appointmentsResponse.data.hasRelationship || 
+           relationshipsResponse.data.hasRelationship;
   } catch (error) {
     console.error('Error validating user relationship:', error.message);
-    
-    // Handle specific error cases
-    if (error.response) {
-      // Server responded with error status
-      console.error('Appointment service response:', error.response.status, error.response.data);
-    } else if (error.request) {
-      // No response received
-      console.error('No response from appointment service');
-    }
-    
-    // Fail-safe: if we can't verify the relationship, don't allow the chat
     return false;
   }
 }

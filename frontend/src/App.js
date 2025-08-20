@@ -9,7 +9,9 @@ import HomePage from './pages/Homepage';
 import { AuthProvider } from './auth/AuthProvider';
 import InfoManagement from './pages/InfoManagement';
 import ChatContainer from './components/Chat/ChatContainer';
-
+import DoctorSearch from './components/relationships/DoctorSearch';
+import PendingRequests from './components/relationships/PendingRequests';
+import MyCollaborations from './components/relationships/MyCollaborations';
 
 function App() {
   return (
@@ -22,6 +24,11 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/infomanagement" element={<InfoManagement />} />
           <Route path="/chat" element={<ChatContainer />} />
+
+          <Route path="/doctors/search" element={<DoctorSearch />} />
+          <Route path="/collaborations/pending" element={<PendingRequests />} />
+          <Route path="/collaborations" element={<MyCollaborations />} />
+
         </Routes>
       </AuthProvider>
     </Router>

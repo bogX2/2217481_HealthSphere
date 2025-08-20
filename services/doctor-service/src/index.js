@@ -5,6 +5,8 @@ const sequelize = require('./config/database');
 const doctorRoutes = require('./routes/doctor');
 const path = require('path');
 
+const internalRoutes = require('./routes/internal');
+
 const app = express();
 
 app.use(cors({
@@ -45,6 +47,7 @@ async function connectWithRetry() {
     require('./models/Doctor');
     require('./models/DoctorDocument');
     require('./models/Availability');
+    require('./models/DoctorPatientRelationship');
 
     await sequelize.sync({ alter: true });
     console.log('Doctor DB synced');
@@ -54,6 +57,8 @@ async function connectWithRetry() {
     app.use('/uploads', express.static(uploadsPath));
 
     app.use('/api/doctors', doctorRoutes);
+
+    app.use('/internal', internalRoutes);
 
     app.get('/health', (req, res) => res.json({ status: 'Doctor Service running', port: PORT }));
 

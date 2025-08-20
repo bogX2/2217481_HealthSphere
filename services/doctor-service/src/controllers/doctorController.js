@@ -94,62 +94,103 @@ const getAvailability = async (req, res) => {
   }
 };
 
-// ---- Search doctors ---- IT WILL FIND ONLY DOCTORS THAT HAVE BEEN APPROVED
+// ---- Search doctors ---- IT WILL FIND ONLY DOCTORS THAT HAVE BEEN APPROVED (Now it finds everyone)
 // supports: specialty, location, language, minRating, maxFee, availableOn (YYYY-MM-DD)
+// const searchDoctors = async (req, res) => {
+//   try {
+//     const {
+//       specialty, location, language,
+//       minRating, maxFee, availableOn,
+//       page = 1, limit = 20, sort = 'rating'
+//     } = req.query;
+
+//     //const where = { isActive: true, verificationStatus: 'approved' };
+//     const where = { isActive: true };
+
+//     if (specialty) where.specialty = { [Op.iLike]: `%${specialty}%` };
+//     if (location) where.location = { [Op.iLike]: `%${location}%` };
+//     if (language) where.languages = { [Op.contains]: [language] }; // requires Postgres array
+//     if (minRating) where.rating = { ...(where.rating || {}), [Op.gte]: parseFloat(minRating) };
+//     if (maxFee) where.fee = { ...(where.fee || {}), [Op.lte]: parseFloat(maxFee) };
+
+//     const offset = (page - 1) * limit;
+//     const order = [[sort, 'DESC']];
+
+//     let doctors = await Doctor.findAll({ where, limit: parseInt(limit), offset: parseInt(offset), order });
+
+//     // If availability filter requested (availableOn), simple check: if they have a 'single' availability on that date or recurring matching weekday
+//     if (availableOn) {
+//       const requestedDate = new Date(availableOn);
+//       const dayOfWeek = requestedDate.getUTCDay() || 7; // 0..6 (Sun..Sat) -> map if needed
+//       // load availabilities for the fetched doctors
+//       const ids = doctors.map(d => d.id);
+//       const avails = await Availability.findAll({ where: { doctorId: ids } });
+//       const availMap = new Map();
+//       avails.forEach(a => {
+//         if (!availMap.has(a.doctorId)) availMap.set(a.doctorId, []);
+//         availMap.get(a.doctorId).push(a);
+//       });
+
+//       doctors = doctors.filter(d => {
+//         const list = availMap.get(d.id) || [];
+//         // check single or recurring
+//         return list.some(a => {
+//           if (a.type === 'single') {
+//             return a.data.date === availableOn;
+//           } else if (a.type === 'recurring') {
+//             // assume data.dayOfWeek (1-7) or 0-6 depending on your client; check both
+//             const dow = a.data.dayOfWeek;
+//             // normalize: client may send 1=Mon..7=Sun, JS getUTCDay 0=Sun..6=Sat
+//             if (dow === undefined) return false;
+//             if (dow === dayOfWeek || dow === (dayOfWeek % 7)) return true;
+//           }
+//           return false;
+//         });
+//       });
+//     }
+
+//     res.json({ doctors });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 const searchDoctors = async (req, res) => {
   try {
-    const {
-      specialty, location, language,
-      minRating, maxFee, availableOn,
-      page = 1, limit = 20, sort = 'rating'
-    } = req.query;
-
-    const where = { isActive: true, verificationStatus: 'approved' };
-
-    if (specialty) where.specialty = { [Op.iLike]: `%${specialty}%` };
-    if (location) where.location = { [Op.iLike]: `%${location}%` };
-    if (language) where.languages = { [Op.contains]: [language] }; // requires Postgres array
-    if (minRating) where.rating = { ...(where.rating || {}), [Op.gte]: parseFloat(minRating) };
-    if (maxFee) where.fee = { ...(where.fee || {}), [Op.lte]: parseFloat(maxFee) };
-
-    const offset = (page - 1) * limit;
-    const order = [[sort, 'DESC']];
-
-    let doctors = await Doctor.findAll({ where, limit: parseInt(limit), offset: parseInt(offset), order });
-
-    // If availability filter requested (availableOn), simple check: if they have a 'single' availability on that date or recurring matching weekday
-    if (availableOn) {
-      const requestedDate = new Date(availableOn);
-      const dayOfWeek = requestedDate.getUTCDay() || 7; // 0..6 (Sun..Sat) -> map if needed
-      // load availabilities for the fetched doctors
-      const ids = doctors.map(d => d.id);
-      const avails = await Availability.findAll({ where: { doctorId: ids } });
-      const availMap = new Map();
-      avails.forEach(a => {
-        if (!availMap.has(a.doctorId)) availMap.set(a.doctorId, []);
-        availMap.get(a.doctorId).push(a);
-      });
-
-      doctors = doctors.filter(d => {
-        const list = availMap.get(d.id) || [];
-        // check single or recurring
-        return list.some(a => {
-          if (a.type === 'single') {
-            return a.data.date === availableOn;
-          } else if (a.type === 'recurring') {
-            // assume data.dayOfWeek (1-7) or 0-6 depending on your client; check both
-            const dow = a.data.dayOfWeek;
-            // normalize: client may send 1=Mon..7=Sun, JS getUTCDay 0=Sun..6=Sat
-            if (dow === undefined) return false;
-            if (dow === dayOfWeek || dow === (dayOfWeek % 7)) return true;
-          }
-          return false;
-        });
-      });
-    }
-
-    res.json({ doctors });
+    const { page = 1, limit = 20, sort = 'rating' } = req.query;
+    
+    // Remove verificationStatus filter
+    const where = { 
+      isActive: true 
+      //verificationStatus: 'approved' 
+    };
+    
+    // Convert page and limit to integers
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    
+    // Calculate offset for pagination
+    const offset = (pageNum - 1) * limitNum;
+    
+    // Find doctors
+    const { count, rows: doctors } = await Doctor.findAndCountAll({
+      where,
+      limit: limitNum,
+      offset: offset,
+      order: [[sort, 'DESC']]
+    });
+    
+    res.json({
+      doctors: doctors,
+      pagination: {
+        total: count,
+        page: pageNum,
+        pages: Math.ceil(count / limitNum),
+        limit: limitNum
+      }
+    });
   } catch (err) {
+    console.error('Error searching doctors:', err);
     res.status(500).json({ error: err.message });
   }
 };
