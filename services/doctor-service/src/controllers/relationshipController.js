@@ -312,7 +312,7 @@ exports.getDoctorRelationships = async (req, res) => {
 // Get all relationships for a patient
 exports.getPatientRelationships = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id; // This is the USER ID of the patient
     
     // First, find the relationships for this patient
     const relationships = await DoctorPatientRelationship.findAll({

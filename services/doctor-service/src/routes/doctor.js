@@ -61,6 +61,14 @@ router.get('/relationships/doctor', authenticateToken, authorizeRole(['doctor'])
 router.get('/relationships/patient', authenticateToken, authorizeRole(['patient']), relationshipController.getPatientRelationships);
 router.get('/relationships/check/:userId1/:userId2', authenticateToken, relationshipController.checkRelationship);
 
+// Get all relationships for a doctor
+router.get('/doctor', authenticateToken, authorizeRole(['doctor', 'admin']), 
+  relationshipController.getDoctorRelationships);
+
+// Get all relationships for a patient
+router.get('/patient', authenticateToken, authorizeRole(['patient', 'admin']), 
+  relationshipController.getPatientRelationships);
+
 // Allow service-to-service calls for profile creation
 //router.post('/', serviceAuth, upsertDoctor);
 

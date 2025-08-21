@@ -34,6 +34,7 @@ const Profile = () => {
               <>
                 <li><button className="btn primary-btn" onClick={() => navigate('/infomanagement')}>Modifica dati personali</button></li>
                 <li><button className="btn primary-btn" onClick={() => navigate('/doctors/search')}>Find a Doctor</button></li>
+                <li><button className="btn primary-btn" onClick={() => navigate('/collaborations')}>My Collaborations</button></li>
                 <li><button className="btn primary-btn" onClick={() => navigate('/appointments')}>Prenota un appuntamento</button></li>
                 <li><button className="btn primary-btn" onClick={handleStartChat}>Inizia una nuova chat</button></li>
               </>
