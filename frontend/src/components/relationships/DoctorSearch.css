@@ -1,0 +1,58 @@
+/* src/components/relationships/DoctorSearch.css */
+.doctor-card {
+  transition: all 0.3s ease;
+  height: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.doctor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.doctor-card .card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make search input more prominent */
+.input-group-lg .form-control {
+  font-size: 1.2rem;
+  min-height: 56px;
+  border-radius: 50px 0 0 50px !important;
+}
+
+.input-group-lg .btn {
+  font-size: 1.2rem;
+  min-height: 56px;
+  border-radius: 0 50px 50px 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .input-group-lg .form-control,
+  .input-group-lg .btn {
+    min-height: 50px;
+    font-size: 1rem;
+  }
+  
+  .display-4 {
+    font-size: 2rem !important;
+  }
+  
+  .fs-3 {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* Add some breathing room on mobile */
+@media (max-width: 576px) {
+  .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 1.5rem !important;
+  }
+}

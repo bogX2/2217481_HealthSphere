@@ -1,33 +1,23 @@
+// src/components/relationships/DoctorCard.js
 import React from 'react';
 
 const DoctorCard = ({ doctor, onActionClick, actionLabel = "Request Collaboration" }) => {
-  // Use the name field we're now fetching from user-service
-  const name = doctor.name || 'Doctor';
-  const specialty = doctor.specialty || 'Specialty not set';
-  
   return (
-    <div className="card h-100">
-      <div className="card-body">
-        <div className="d-flex align-items-center mb-3">
-          <div className="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-               style={{ width: '50px', height: '50px', fontSize: '1.2rem' }}>
-            {name.charAt(0)}
-          </div>
-          <div className="ms-3">
-            <h5 className="card-title mb-0">{name}</h5>
-            <div className="text-muted">{specialty}</div>
-          </div>
+    <div className="doctor-card card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+      <div className="card-body p-4 d-flex flex-column">
+        <div className="text-center mb-3">
+          <h3 className="card-title mb-2 fw-bold" style={{ fontSize: "1.5rem" }}>
+            {doctor.firstName} {doctor.lastName}
+          </h3>
+          <p className="text-primary mb-0" style={{ fontSize: "1.1rem" }}>
+            {doctor.specialty}
+          </p>
         </div>
         
-        {doctor.bio && (
-          <p className="card-text" style={{ maxHeight: '3em', overflow: 'hidden' }}>
-            {doctor.bio}
-          </p>
-        )}
-        
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="mt-auto">
           <button 
-            className="btn btn-primary"
+            className="btn btn-primary w-100 py-2 fw-medium rounded-2"
+            style={{ fontSize: "1.05rem", padding: "0.6rem 0" }}
             onClick={onActionClick}
           >
             {actionLabel}

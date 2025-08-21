@@ -1,49 +1,32 @@
+// src/components/relationships/DoctorSearch.js
 import React, { useState, useEffect } from 'react';
+import DoctorCard from './DoctorCard';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import DoctorCard from './DoctorCard';
 
 const DoctorSearch = () => {
   const [doctors, setDoctors] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [error, setError] = useState(null); // This was causing the warning
 
   useEffect(() => {
     fetchAllDoctors();
   }, []);
 
   const fetchAllDoctors = async () => {
+    setError(null); // Reset error before fetching
     const token = localStorage.getItem('token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
     setLoading(true);
     try {
-      // Get ALL doctors first
       const response = await api.get('/doctors/search', { headers });
       
-      // Fetch user details for each doctor to get their name
-      const doctorsWithDetails = await Promise.all(response.data.doctors.map(async (doctor) => {
-        try {
-          const userResponse = await api.get(`/users/${doctor.userId}`, {
-            headers: headers
-          });
-          
-          return {
-            ...doctor,
-            name: `${userResponse.data.user.firstName} ${userResponse.data.user.lastName}`,
-            email: userResponse.data.user.email
-          };
-        } catch (err) {
-          console.error(`Error fetching user details for doctor ${doctor.id}:`, err);
-          return {
-            ...doctor,
-            name: 'Doctor',
-            email: ''
-          };
-        }
+      const doctorsWithDetails = response.data.doctors.map(doctor => ({
+        ...doctor,
+        name: `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim() || doctor.specialty || 'Doctor'
       }));
       
       setAllDoctors(doctorsWithDetails);
@@ -65,11 +48,9 @@ const DoctorSearch = () => {
       return;
     }
     
-    // Client-side filtering by name
     const filtered = allDoctors.filter(doctor => 
-      doctor.name.toLowerCase().includes(query)
+      `${doctor.firstName} ${doctor.lastName} ${doctor.specialty}`.toLowerCase().includes(query)
     );
-    
     setDoctors(filtered);
   };
 
@@ -107,64 +88,86 @@ const DoctorSearch = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h1>Find a Doctor</h1>
-      
-      {error && <div className="alert alert-danger">{error}</div>}
-      
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="input-group">
-            <input 
-              type="text"
-              className="form-control"
-              placeholder="Search by doctor name..."
-              value={searchQuery}
-              onChange={handleSearch}
-              onKeyPress={e => e.key === 'Enter' && handleSearch(e)}
-            />
-            <button 
-              className="btn btn-primary"
-              onClick={() => document.querySelector('input[type="text"]').focus()}
-              disabled={loading}
-            >
-              {loading ? 'Loading...' : 'Search'}
-            </button>
+    <div className="container-fluid px-4 py-3">
+      <div className="row mb-4">
+        <div className="col-12 text-center">
+          <h1 className="display-4 fw-bold mb-4">Find a Doctor</h1>
+          
+          <div className="col-lg-8 mx-auto">
+            <div className="input-group input-group-lg mb-4">
+              <input
+                type="text"
+                className="form-control rounded-start-pill ps-4 py-3"
+                placeholder="Search by doctor name, specialty, or location..."
+                value={searchQuery}
+                onChange={handleSearch}
+                onKeyPress={e => e.key === 'Enter' && handleSearch(e)}
+              />
+              <button
+                className="btn btn-primary rounded-end-pill px-4 py-3"
+                onClick={() => document.querySelector('input[type="text"]').focus()}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                ) : null}
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
           </div>
+          
+          {error && (
+            <div className="col-lg-8 mx-auto">
+              <div className="alert alert-danger rounded-3">
+                {error}
+                <button 
+                  className="btn btn-sm btn-outline-light ms-3"
+                  onClick={fetchAllDoctors}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
-      <div className="card mb-4">
-        <div className="card-header">Debug Information</div>
-        <div className="card-body">
-          <p><strong>Token present:</strong> {localStorage.getItem('token') ? 'Yes' : 'No'}</p>
-          <p><strong>Doctors Found:</strong> {doctors.length}</p>
-          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
-          <p><strong>Search Query:</strong> "{searchQuery}"</p>
+      <div className="row mb-4">
+        <div className="col-12 text-center">
+          <h4 className="text-muted">
+            <strong className="text-dark fs-3">{doctors.length}</strong> doctor{doctors.length !== 1 ? 's' : ''} found
+          </h4>
         </div>
       </div>
-      
-      {loading ? (
-        <div className="text-center">Loading doctors...</div>
-      ) : doctors.length === 0 ? (
-        <div className="alert alert-info">
-          {searchQuery ? 
-            'No doctors found matching your search criteria' : 
-            'No doctors available in the system'}
-        </div>
-      ) : (
-        <div className="row">
-          {doctors.map(doctor => (
-            <div key={doctor.id} className="col-md-6 mb-4">
-              <DoctorCard 
-                doctor={doctor} 
+
+      <div className="row g-4 justify-content-center">
+        {loading ? (
+          <div className="col-12 text-center py-5">
+            <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-4 fs-5">Searching for doctors...</p>
+          </div>
+        ) : doctors.length === 0 ? (
+          <div className="col-lg-8">
+            <div className="alert alert-info rounded-3 py-4 text-center">
+              {searchQuery 
+                ? 'No doctors found matching your search criteria. Try different keywords.'
+                : 'No doctors available in the system. Please check back later.'}
+            </div>
+          </div>
+        ) : (
+          doctors.map(doctor => (
+            <div key={doctor.id} className="col-xl-3 col-lg-4 col-md-6 col-sm-8">
+              <DoctorCard
+                doctor={doctor}
                 onActionClick={() => handleRequestCollaboration(doctor.id)}
                 actionLabel="Request Collaboration"
               />
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 };

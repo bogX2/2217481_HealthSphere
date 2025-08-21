@@ -5,6 +5,7 @@ const { Op } = require('sequelize');
 const Doctor = require('../models/Doctor');
 const DoctorDocument = require('../models/DoctorDocument');
 const Availability = require('../models/Availability');
+const jwt = require('jsonwebtoken');
 
 const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
 
@@ -157,40 +158,68 @@ const getAvailability = async (req, res) => {
 
 const searchDoctors = async (req, res) => {
   try {
-    const { page = 1, limit = 20, sort = 'rating' } = req.query;
+    const {
+      specialty,
+      location,
+      language,
+      minRating,
+      maxFee,
+      availableOn,
+      page = 1,
+      limit = 20,
+      sort = 'rating'
+    } = req.query;
+
+    // THIS IS THE MISSING PART - DEFINE WHERECONDITION
+    const whereCondition = {};
+    if (specialty) whereCondition.specialty = specialty;
+    if (location) whereCondition.location = { [Op.iLike]: `%${location}%` };
+    // Add other filters as needed
     
-    // Remove verificationStatus filter
-    const where = { 
-      isActive: true 
-      //verificationStatus: 'approved' 
-    };
+    console.log(`Searching doctors with conditions:`, whereCondition);
     
-    // Convert page and limit to integers
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    
-    // Calculate offset for pagination
-    const offset = (pageNum - 1) * limitNum;
-    
-    // Find doctors
-    const { count, rows: doctors } = await Doctor.findAndCountAll({
-      where,
-      limit: limitNum,
-      offset: offset,
+    const doctors = await Doctor.findAll({
+      where: whereCondition,
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit),
       order: [[sort, 'DESC']]
     });
     
-    res.json({
-      doctors: doctors,
-      pagination: {
-        total: count,
-        page: pageNum,
-        pages: Math.ceil(count / limitNum),
-        limit: limitNum
+    console.log(`Found ${doctors.length} doctors in database`);
+    
+    // Enrich with user details using PUBLIC endpoint
+    const result = await Promise.all(doctors.map(async (doctor) => {
+      try {
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+        
+        // USE THE PUBLIC ENDPOINT (no authentication needed)
+        const userResp = await axios.get(`${userServiceUrl}/api/users/${doctor.userId}/public`);
+        
+        const user = userResp.data;
+        
+        return {
+          ...doctor.toJSON(),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          specialty: doctor.specialty,
+          bio: doctor.bio
+        };
+      } catch (err) {
+        console.error(`Error enriching doctor ${doctor.id}:`, err.response?.data || err.message);
+        // Return doctor data with fallback
+        return {
+          ...doctor.toJSON(),
+          firstName: doctor.specialty || 'Doctor',
+          lastName: '',
+          specialty: doctor.specialty,
+          bio: doctor.bio
+        };
       }
-    });
+    }));
+    
+    res.json({ doctors: result });
   } catch (err) {
-    console.error('Error searching doctors:', err);
+    console.error('Error in searchDoctors:', err);
     res.status(500).json({ error: err.message });
   }
 };
