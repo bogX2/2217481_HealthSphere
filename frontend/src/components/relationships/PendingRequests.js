@@ -110,10 +110,20 @@ const PendingRequests = () => {
                         <div className="d-flex align-items-center">
                           <div className="avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
                                style={{ width: '30px', height: '30px' }}>
-                            {request.patient.user?.name?.charAt(0) || 
-                             request.patient.name?.charAt(0) || 'P'}
+                            {/* 
+                              CHANGED: Now using firstName instead of nested user.name
+                              Takes first letter of firstName, falls back to first letter of lastName, then 'P'
+                            */}
+                            {request.patient.firstName?.charAt(0) || 
+                             request.patient.lastName?.charAt(0) || 'P'}
                           </div>
-                          <span>{request.patient.user?.name || request.patient.name}</span>
+                          {/* 
+                            CHANGED: Now using firstName and lastName directly
+                            Combines both fields instead of looking for a single 'name' field
+                          */}
+                          <span>
+                            {request.patient.firstName} {request.patient.lastName}
+                          </span>
                         </div>
                       </td>
                       <td>

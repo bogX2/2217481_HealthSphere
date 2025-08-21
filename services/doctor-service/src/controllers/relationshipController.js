@@ -1,6 +1,8 @@
 const DoctorPatientRelationship = require('../models/DoctorPatientRelationship');
 const Doctor = require('../models/Doctor');
 const { Op } = require('sequelize');
+const axios = require('axios');
+
 
 // Request a relationship with a doctor
 exports.requestRelationship = async (req, res) => {
@@ -44,50 +46,90 @@ exports.requestRelationship = async (req, res) => {
   }
 };
 
+
 // Get pending relationship requests for a doctor
 exports.getPendingRelationships = async (req, res) => {
   try {
-    const doctorId = req.user.id;
+    const userId = req.user.id; // This is the USER ID (105), not the DOCTOR ID
     
+    // First, find the Doctor record associated with this user
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res.status(404).json({ 
+        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      });
+    }
+    
+    // Now use the actual DOCTOR ID to find pending relationships
     const relationships = await DoctorPatientRelationship.findAll({
       where: {
-        doctorId,
+        doctorId: doctor.id,  // THIS IS THE CRITICAL FIX
         status: 'pending'
-      },
-      include: [{
-        model: Doctor,
-        as: 'doctor',
-        include: [{ 
-          model: User, 
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }]
-      }, {
-        model: Patient,
-        as: 'patient',
-        include: [{ 
-          model: User, 
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }]
-      }]
+      }
     });
-    
-    res.json({ requests: relationships });
+
+    // Enrich with patient details through the user service API
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    const enrichedRelationships = await Promise.all(relationships.map(async (relationship) => {
+      try {
+        // Use the PUBLIC endpoint to get patient details
+        const userResp = await axios.get(
+          `${userServiceUrl}/api/users/${relationship.patientId}/public`, 
+          {
+            headers: { 
+              'Authorization': req.headers.authorization 
+            }
+          }
+        );
+        
+        return {
+          ...relationship.toJSON(),
+          patient: userResp.data
+        };
+      } catch (err) {
+        console.error(`Error fetching patient ${relationship.patientId}:`, 
+          err.response?.data || err.message);
+        return {
+          ...relationship.toJSON(),
+          patient: {
+            id: relationship.patientId,
+            firstName: 'Unknown',
+            lastName: 'Patient',
+            email: 'unknown@example.com'
+          }
+        };
+      }
+    }));
+
+    res.json({ requests: enrichedRelationships });
   } catch (err) {
     console.error('Error getting pending relationships:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
+
 // Accept a relationship request
 exports.acceptRelationship = async (req, res) => {
   try {
     const { id } = req.params;
-    const doctorId = req.user.id;
+    const userId = req.user.id; // This is the USER ID, not the DOCTOR ID
     
+    // First, find the Doctor record associated with this user
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res.status(404).json({ 
+        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      });
+    }
+    
+    // Now use the ACTUAL DOCTOR ID to find the relationship
     const relationship = await DoctorPatientRelationship.findOne({
-      where: { id, doctorId, status: 'pending' }
+      where: { 
+        id, 
+        doctorId: doctor.id,  // CRITICAL: Use doctor.id, not userId
+        status: 'pending' 
+      }
     });
     
     if (!relationship) {
@@ -108,14 +150,28 @@ exports.acceptRelationship = async (req, res) => {
   }
 };
 
+
 // Reject a relationship request
 exports.rejectRelationship = async (req, res) => {
   try {
     const { id } = req.params;
-    const doctorId = req.user.id;
+    const userId = req.user.id; // This is the USER ID, not the DOCTOR ID
     
+    // First, find the Doctor record associated with this user
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res.status(404).json({ 
+        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      });
+    }
+    
+    // Now use the ACTUAL DOCTOR ID to find the relationship
     const relationship = await DoctorPatientRelationship.findOne({
-      where: { id, doctorId, status: 'pending' }
+      where: { 
+        id, 
+        doctorId: doctor.id,  // CRITICAL: Use doctor.id, not userId
+        status: 'pending' 
+      }
     });
     
     if (!relationship) {
@@ -136,25 +192,49 @@ exports.rejectRelationship = async (req, res) => {
   }
 };
 
+
 // Terminate an active relationship
 exports.terminateRelationship = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id; // This is the USER ID
+    
+    // Determine if user is doctor or patient and find appropriate profile
+    let profile, profileType;
+    
+    // First, check if user is a doctor
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (doctor) {
+      profile = doctor;
+      profileType = 'doctor';
+    } else {
+      // User might be a patient - in your system, patients are just users without doctor profiles
+      profile = { id: userId };
+      profileType = 'patient';
+    }
+    
+    if (!profile) {
+      return res.status(404).json({ 
+        error: 'User profile not found' 
+      });
+    }
+    
+    // Find the relationship based on profile type
+    const whereCondition = { id, status: 'active' };
+    if (profileType === 'doctor') {
+      whereCondition.doctorId = profile.id;
+    } else {
+      whereCondition.patientId = profile.id;
+    }
     
     const relationship = await DoctorPatientRelationship.findOne({
-      where: { 
-        id,
-        [Op.or]: [
-          { doctorId: userId },
-          { patientId: userId }
-        ],
-        status: 'active'
-      }
+      where: whereCondition
     });
     
     if (!relationship) {
-      return res.status(404).json({ error: 'Active relationship not found' });
+      return res.status(404).json({ 
+        error: 'Active relationship not found' 
+      });
     }
     
     await relationship.update({
@@ -169,76 +249,200 @@ exports.terminateRelationship = async (req, res) => {
   }
 };
 
+
 // Get all relationships for a doctor
 exports.getDoctorRelationships = async (req, res) => {
   try {
-    const doctorId = req.user.id;
+    const userId = req.user.id;
     
+    // First, find the Doctor record associated with this user
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res.status(404).json({ 
+        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      });
+    }
+    
+    // Now use the actual DOCTOR ID to find relationships
     const relationships = await DoctorPatientRelationship.findAll({
       where: { 
-        doctorId,
+        doctorId: doctor.id,
         status: { [Op.notIn]: ['rejected'] }
-      },
-      include: [{
-        model: Patient,
-        as: 'patient',
-        include: [{ 
-          model: User, 
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }]
-      }]
+      }
     });
-    
-    res.json({ relationships });
+
+    // Enrich with patient details through the user service API
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    const enrichedRelationships = await Promise.all(relationships.map(async (relationship) => {
+      try {
+        const userResp = await axios.get(
+          `${userServiceUrl}/api/users/${relationship.patientId}/public`, 
+          {
+            headers: { 'Authorization': req.headers.authorization }
+          }
+        );
+        
+        return {
+          ...relationship.toJSON(),
+          patient: userResp.data
+        };
+      } catch (err) {
+        console.error(`Error fetching patient ${relationship.patientId}:`, 
+          err.response?.data || err.message);
+        return {
+          ...relationship.toJSON(),
+          patient: {
+            id: relationship.patientId,
+            firstName: 'Unknown',
+            lastName: 'Patient',
+            email: 'unknown@example.com'
+          }
+        };
+      }
+    }));
+
+    res.json({ relationships: enrichedRelationships });
   } catch (err) {
     console.error('Error getting doctor relationships:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
+
 // Get all relationships for a patient
 exports.getPatientRelationships = async (req, res) => {
   try {
-    const patientId = req.user.id;
+    const userId = req.user.id;
     
+    // First, find the relationships for this patient
     const relationships = await DoctorPatientRelationship.findAll({
       where: { 
-        patientId,
+        patientId: userId,
         status: { [Op.notIn]: ['rejected'] }
-      },
-      include: [{
-        model: Doctor,
-        as: 'doctor',
-        include: [{ 
-          model: User, 
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }]
-      }]
+      }
     });
-    
-    res.json({ relationships });
+
+    // Enrich with doctor details through the user service API
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    const enrichedRelationships = await Promise.all(relationships.map(async (relationship) => {
+      try {
+        // First, get the doctor profile to get the userId
+        const doctor = await Doctor.findByPk(relationship.doctorId);
+        if (!doctor) {
+          throw new Error('Doctor profile not found');
+        }
+        
+        // Use the PUBLIC endpoint to get doctor user details
+        const userResp = await axios.get(
+          `${userServiceUrl}/api/users/${doctor.userId}/public`, 
+          {
+            headers: { 'Authorization': req.headers.authorization }
+          }
+        );
+        
+        return {
+          ...relationship.toJSON(),
+          doctor: {
+            ...doctor.toJSON(),
+            user: userResp.data
+          }
+        };
+      } catch (err) {
+        console.error(`Error fetching doctor ${relationship.doctorId}:`, 
+          err.response?.data || err.message);
+        return {
+          ...relationship.toJSON(),
+          doctor: {
+            id: relationship.doctorId,
+            user: {
+              id: doctor ? doctor.userId : relationship.doctorId,
+              firstName: 'Unknown',
+              lastName: 'Doctor',
+              email: 'unknown@example.com'
+            }
+          }
+        };
+      }
+    }));
+
+    res.json({ relationships: enrichedRelationships });
   } catch (err) {
     console.error('Error getting patient relationships:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
+
 // Check if a relationship exists between two users
 exports.checkRelationship = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
     
-    // Check if there's an active relationship between these users
-    const relationship = await DoctorPatientRelationship.findOne({
-      where: {
-        [Op.or]: [
-          { doctorId: userId1, patientId: userId2, status: 'active' },
-          { doctorId: userId2, patientId: userId1, status: 'active' }
-        ]
+    // First, check if userId1 is a doctor
+    let isDoctor1 = false;
+    let doctorId1 = null;
+    try {
+      const doctorResp1 = await axios.get(
+        `${userServiceUrl}/api/users/${userId1}/public`, 
+        { headers: { 'Authorization': req.headers.authorization } }
+      );
+      if (doctorResp1.data.role === 'doctor') {
+        // Find the Doctor record for this user
+        const doctor1 = await Doctor.findOne({ where: { userId: userId1 } });
+        if (doctor1) {
+          isDoctor1 = true;
+          doctorId1 = doctor1.id;
+        }
       }
-    });
+    } catch (err) {
+      console.error(`Error checking if user ${userId1} is a doctor:`, err);
+    }
+    
+    // First, check if userId2 is a doctor
+    let isDoctor2 = false;
+    let doctorId2 = null;
+    try {
+      const doctorResp2 = await axios.get(
+        `${userServiceUrl}/api/users/${userId2}/public`, 
+        { headers: { 'Authorization': req.headers.authorization } }
+      );
+      if (doctorResp2.data.role === 'doctor') {
+        // Find the Doctor record for this user
+        const doctor2 = await Doctor.findOne({ where: { userId: userId2 } });
+        if (doctor2) {
+          isDoctor2 = true;
+          doctorId2 = doctor2.id;
+        }
+      }
+    } catch (err) {
+      console.error(`Error checking if user ${userId2} is a doctor:`, err);
+    }
+    
+    // Now check for relationships based on roles
+    let relationship = null;
+    
+    // Case 1: userId1 is doctor, userId2 is patient
+    if (isDoctor1) {
+      relationship = await DoctorPatientRelationship.findOne({
+        where: {
+          doctorId: doctorId1,
+          patientId: userId2,
+          status: 'active'
+        }
+      });
+    }
+    
+    // Case 2: userId2 is doctor, userId1 is patient
+    if (!relationship && isDoctor2) {
+      relationship = await DoctorPatientRelationship.findOne({
+        where: {
+          doctorId: doctorId2,
+          patientId: userId1,
+          status: 'active'
+        }
+      });
+    }
     
     res.json({ 
       hasRelationship: !!relationship,
