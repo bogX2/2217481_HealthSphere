@@ -21,7 +21,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route
+  path="/profile"
+  element={<Profile key={localStorage.getItem('token') || 'guest'} />}
+/>
           <Route path="/infomanagement" element={<InfoManagement />} />
           <Route path="/chat" element={<ChatContainer />} />
 

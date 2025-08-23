@@ -32,12 +32,17 @@ const Login = () => {
             const res = await axios.post('http://localhost:8081/api/auth/login', values);
 
             // salva il token nel localStorage
-            const token = res.data.token; 
-            localStorage.setItem('token', token);
+             // ✅ salva il token correttamente
+              const token = res.data.token;
+              localStorage.setItem('token', token);
 
-            setStatus({ success: 'Login avvenuto con successo!' });
+              // ✅ notifica i componenti che il login è cambiato
+              window.dispatchEvent(new Event('authChanged'));
 
-            navigate('/profile');
+              setStatus({ success: 'Login avvenuto con successo!' });
+
+              // ✅ naviga al profilo
+              navigate('/profile');
           } catch (error) {
             setStatus({ error: error.response?.data?.error || 'Errore durante il login' });
           }
