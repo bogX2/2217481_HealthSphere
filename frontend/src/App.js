@@ -13,6 +13,9 @@ import DoctorSearch from './components/relationships/DoctorSearch';
 import PendingRequests from './components/relationships/PendingRequests';
 import MyCollaborations from './components/relationships/MyCollaborations';
 
+import BookAppointment from './pages/appointments/BookAppointment';
+import ManageSlots from './pages/appointments/ManageSlots';
+
 function App() {
   return (
     <Router>
@@ -22,9 +25,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
-  path="/profile"
-  element={<Profile key={localStorage.getItem('token') || 'guest'} />}
-/>
+            path="/profile"
+            element={<Profile key={localStorage.getItem('token') || 'guest'} />}
+          />
           <Route path="/infomanagement" element={<InfoManagement />} />
           <Route path="/chat" element={<ChatContainer />} />
 
@@ -32,6 +35,8 @@ function App() {
           <Route path="/collaborations/pending" element={<PendingRequests />} />
           <Route path="/collaborations" element={<MyCollaborations />} />
 
+          <Route path="/appointments/book/:doctorId" element={<BookAppointment />} />
+          <Route path="/manageslots" element={<ManageSlots />} />
         </Routes>
       </AuthProvider>
     </Router>

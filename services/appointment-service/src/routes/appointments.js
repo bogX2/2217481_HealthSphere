@@ -15,7 +15,12 @@ router.get('/doctor/:doctorId', authenticateToken, authorizeRole(['doctor','admi
 // Patients see their appointments
 router.get('/patient/:patientId', authenticateToken, authorizeRole(['patient','admin']), controller.getPatientAppointments);
 
-
+router.get(
+  '/slots/doctor/:doctorId',
+  authenticateToken,
+  authorizeRole(['doctor','admin']),
+  controller.getDoctorSlots
+);
 router.get('/relationship/:userId1/:userId2', authenticateToken, async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;

@@ -6,7 +6,8 @@ const AppointmentSlot = require('../models/AppointmentSlot');
 exports.createSlot = async (req, res) => {
   try {
     // user must be a doctor (route already checks role, but double-check)
-    const doctorId = req.user.id;
+    //const doctorId = req.user.id;
+    const doctorId = req.user.userId;
     const { date, startTime, endTime } = req.body;
     const slot = await AppointmentSlot.create({ doctorId, date, startTime, endTime });
     res.json({ slot });
@@ -67,4 +68,17 @@ exports.getPatientAppointments = async (req, res) => {
     const appointments = await Appointment.findAll({ where: { patientId } });
     res.json({ appointments });
   } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+//functionality to get all the doctor's slot
+exports.getDoctorSlots = async (req, res) => {
+  try {
+    const doctorId = req.user.userId; // preso dal token del doctor
+    const slots = await AppointmentSlot.findAll({
+      where: { doctorId }
+    });
+    res.json({ slots });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

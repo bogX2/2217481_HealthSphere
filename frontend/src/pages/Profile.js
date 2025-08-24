@@ -49,7 +49,7 @@ const Profile = () => {
                 <li><button className="btn primary-btn" onClick={() => navigate('/infomanagement')}>Modifica dati personali</button></li>
                 <li><button className="btn primary-btn" onClick={() => navigate('/doctors/search')}>Find a Doctor</button></li>
                 <li><button className="btn primary-btn" onClick={() => navigate('/collaborations')}>My Collaborations</button></li>
-                <li><button className="btn primary-btn" onClick={() => navigate('/appointments')}>Prenota un appuntamento</button></li>
+                <li><button className="btn primary-btn" onClick={() => navigate('/bookappointment')}>Prenota un appuntamento</button></li>
                 <li><button className="btn primary-btn" onClick={handleStartChat}>Inizia una nuova chat</button></li>
               </>
             )}
@@ -58,8 +58,9 @@ const Profile = () => {
                 <li><button className="btn secondary-btn" onClick={() => navigate('/infomanagement')}>Modifica dati personali</button></li>
                 <li><button className="btn secondary-btn" onClick={() => navigate('/collaborations/pending')}>Pending Requests</button></li>
                 <li><button className="btn secondary-btn" onClick={() => navigate('/collaborations')}>My Collaborations</button></li>
-                <li><button className="btn secondary-btn" onClick={() => navigate('/appointments')}>Visualizza appuntamenti</button></li>
+                <li><button className="btn secondary-btn" onClick={() => navigate('/appointmentlist')}>Visualizza appuntamenti</button></li>
                 <li><button className="btn secondary-btn" onClick={handleManageChats}>Gestisci chat</button></li>
+                <li><button className="btn secondary-btn" onClick={() => navigate('/manageslots')}>Slot Management</button></li>
               </>
             )}
           </ul>

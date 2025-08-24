@@ -2,8 +2,18 @@ require('dotenv').config();
 const express = require('express');
 const sequelize = require('./config/database');
 const appointmentRoutes = require('./routes/appointments');
+const cors = require('cors');
+
+
+
 
 const app = express();
+
+app.use(cors({
+  origin: 'http://localhost:3001', // dominio del frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 8083;
