@@ -1,16 +1,22 @@
+/* =========================================
+   VARIABILI GLOBALI (Palette Colori)
+   ========================================= */
 :root {
   --green: #2a9d8f;
   --green-aqua: #48c9b0;
   --celeste: #90e0ef;
   --dark-green: #1f776d;
-  --light-bg: #f0f7f6;
+  --light-bg: #f0f7f6; /* Sfondo leggermente colorato */
   --text-color: #073b4c;
-  --btn-text: #ffffff;
-  --btn-hover-bg: var(--green-aqua);
-  --btn-focus-outline: 3px solid #264653;
+  --card-bg: #ffffff;
+  --card-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+  --focus-outline: 3px solid #264653;
 }
 
-/* Body & layout */
+/* =========================================
+   STILI DI BASE E LAYOUT
+   ========================================= */
 body, html {
   margin: 0;
   padding: 0;
@@ -18,13 +24,11 @@ body, html {
   background-color: var(--light-bg);
   color: var(--text-color);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 80px; /* più spazio per header fisso */
 }
 
-/* Contenitore logo + titolo fisso in alto a sinistra */
+/* =========================================
+   HEADER FISSO (Logo e Titolo)
+   ========================================= */
 .header-outside {
   position: fixed;
   top: 20px;
@@ -37,128 +41,128 @@ body, html {
 }
 
 .logo-outside-img {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
+  border-radius: 50%;
+  border: 3px solid var(--green);
 }
 
 .header-title {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--green);
+  color: var(--text-color);
   margin: 0;
 }
 
-/* Box bianco centrale */
-.profile-page {
-  max-width: 960px;
+/* =========================================
+   CONTENITORE PRINCIPALE DELLA PAGINA
+   ========================================= */
+.profile-container {
+  max-width: 1000px;
   width: 90%;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  margin: 120px auto 40px auto; /* Spazio per l'header fisso e per il fondo */
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  padding: 24px 32px;
-  margin-left: 100px; /* lascia spazio per header */
-  margin-top: 20px; /* margine sopra, linea orizzontale sotto header */
+  gap: 30px; /* Spazio tra gli elementi interni */
 }
 
-/* Welcome Section centrata */
-.welcome-section {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 150px;
-}
-
+/* =========================================
+   SEZIONE BENVENUTO
+   ========================================= */
 .welcome-section h2 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: var(--dark-green);
   font-weight: 600;
   text-align: center;
+  margin-bottom: 10px;
   user-select: none;
 }
 
-/* Navbar bottoni, tutti su una riga, linea orizzontale sopra */
-.options-nav {
-  margin-top: 16px;
-  border-top: 3px solid var(--green-aqua);
-  padding-top: 20px;
-  overflow-x: auto; /* scroll orizzontale se manca spazio */
+/* =========================================
+   GRIGLIA DELLE CARD DI OPZIONI
+   ========================================= */
+.options-grid {
+  display: grid;
+  /* Crea colonne flessibili: cerca di farle larghe 250px, 
+     ma si adattano per riempire lo spazio. Vanno a capo da sole. */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px; /* Spazio tra le card */
 }
 
-.options-list {
-  list-style: none;
-  display: flex;
-  gap: 20px;
-  padding: 0;
-  margin: 0;
-  white-space: nowrap; /* no wrap */
-}
-
-/* Bottoni */
-.btn {
-  padding: 12px 24px;
-  border-radius: 30px;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
-  user-select: none;
-  box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
-  min-width: 180px;
+/* =========================================
+   STILE DELLA SINGOLA CARD
+   ========================================= */
+.option-card {
+  background-color: var(--card-bg);
+  border-radius: 15px;
+  padding: 25px;
   text-align: center;
-  flex-shrink: 0;
+  border: 1px solid #e0e0e0;
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px; /* Spazio tra icona, titolo e testo */
 }
 
-.primary-btn {
-  background-color: var(--green);
-  color: var(--btn-text);
+/* Effetto al passaggio del mouse o quando si seleziona con la tastiera */
+.option-card:hover,
+.option-card:focus-visible {
+  transform: translateY(-8px); /* Solleva leggermente la card */
+  box-shadow: var(--card-hover-shadow);
+  outline: none; /* Rimuoviamo l'outline di default per gestirlo noi */
 }
 
-.primary-btn:hover,
-.primary-btn:focus {
-  background-color: var(--btn-hover-bg);
-  box-shadow: 0 6px 20px rgba(72, 201, 176, 0.6);
-  transform: translateY(-3px);
-  outline: none;
+/* Anello di focus personalizzato per l'accessibilità */
+.option-card:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 4px;
 }
 
-.secondary-btn {
-  background-color: var(--green-aqua);
-  color: var(--btn-text);
+.card-icon {
+  font-size: 3rem; /* Icona più grande */
+  color: var(--green);
+  line-height: 1;
 }
 
-.secondary-btn:hover,
-.secondary-btn:focus {
-  background-color: var(--celeste);
-  box-shadow: 0 6px 20px rgba(144, 224, 239, 0.6);
-  transform: translateY(-3px);
-  outline: none;
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-green);
+  margin: 0;
 }
 
-/* Focus accessibility */
-.btn:focus-visible {
-  outline: var(--btn-focus-outline);
-  outline-offset: 3px;
+.card-description {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
 }
 
-/* Sezione contenuto opzione selezionata */
+
+/* =========================================
+   AREA PER IL CONTENUTO SELEZIONATO
+   ========================================= */
 .selected-option {
-  margin-top: 32px;
+  margin-top: 20px;
   font-size: 1.1rem;
   color: var(--dark-green);
   min-height: 120px;
-  padding: 16px;
-  border: 2px solid var(--celeste);
-  border-radius: 10px;
-  background-color: #e0f2f1;
+  padding: 25px;
+  border-radius: 12px;
+  background-color: #e8f7f5; /* Un colore di sfondo leggero e coordinato */
+  border: 2px solid var(--green-aqua);
   user-select: text;
 }
 
-/* Messaggio di errore */
+/* =========================================
+   STILI DI SUPPORTO (Caricamento, Errori)
+   ========================================= */
 .error-text {
   color: #d62828;
   font-weight: 700;
@@ -167,9 +171,9 @@ body, html {
   margin: 32px 0;
 }
 
-/* Caricamento */
-.profile-page > div {
+.loading-text { /* Ho dato un nome più specifico */
   font-size: 1.3rem;
   color: var(--dark-green);
   text-align: center;
+  padding: 40px;
 }

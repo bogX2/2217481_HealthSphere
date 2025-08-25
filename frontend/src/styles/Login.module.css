@@ -1,17 +1,15 @@
 /* Login.module.css */
-
-
-
 .header {
   display: flex;
   align-items: center;
   gap: 15px; /* spazio tra logo e titolo */
-  margin-bottom: 30px;
+  margin-bottom: 48px;
 }
 
 .logo {
   width: 60px; /* più piccolo */
   height: 60px;
+  margin-left: 60px;
   border-radius: 50%;
   border: 3px solid var(--primary-color);
   transition: transform 0.4s ease, box-shadow 0.4s ease;
@@ -29,15 +27,15 @@
   margin: 0;
 }
 
-
 .loginContainer {
   background-color: rgba(255, 255, 255, 0.95);
   padding: 40px 30px;
   border-radius: 20px;
-  max-width: 400px;
+  max-width: 500px;
   width: 100%;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   text-align: center;
+  margin: 0 auto 0 0;
 }
 
 .loginContainer h2 {
@@ -49,6 +47,7 @@
 .loginForm {
   display: flex;
   flex-direction: column;
+  padding: 5px 0px 5px 5px; /* Rimosso il padding destro eccessivo */
   gap: 15px;
   text-align: left;
 }
@@ -72,6 +71,7 @@
   font-size: 1rem;
   outline: none;
   transition: border 0.3s ease;
+  box-sizing: border-box; /* Aggiunto per gestire correttamente width e padding */
 }
 
 .formInput:focus {
@@ -86,7 +86,7 @@
 }
 
 .submitBtn {
-  padding: 12px;
+  padding: 16px 88px;
   background-color: var(--primary-color);
   color: #fff;
   border: none;
@@ -95,6 +95,9 @@
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
+  display: block;
+  margin: 20px auto 0 auto; /* Centrato perfettamente */
+  width: fit-content; /* Solo la larghezza necessaria */
 }
 
 .submitBtn:hover {
@@ -106,18 +109,20 @@
 .statusError {
   margin-top: 10px;
   color: #d63031;
+  text-align: center; /* Centrato */
 }
 
 .statusSuccess {
   margin-top: 10px;
   color: #00b894;
+  text-align: center; /* Centrato */
 }
 
 .loginFooter {
   margin-top: 20px;
   font-size: 0.9rem;
   color: #636e72;
-  text-align: center;
+  text-align: center; /* Già centrato, ma esplicitato */
 }
 
 .linkText {

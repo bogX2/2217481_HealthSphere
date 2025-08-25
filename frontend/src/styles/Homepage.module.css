@@ -59,12 +59,14 @@
 }
 
 .primaryBtn {
-  background-color: var(--primary-color);
-  color: #fff;
+background-color: #fff;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
 }
 
 .primaryBtn:hover {
-  background-color: #00d99d;
+background-color: var(--primary-color);
+  color: #fff;
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }

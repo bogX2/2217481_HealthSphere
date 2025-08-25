@@ -16,7 +16,8 @@ const HomePage = () => {
       <img src="/logo192.png" alt="HealthSphere Logo" className={styles.logo} />
       <h1 className={styles.title}>HealthSphere</h1>
       <p className={styles.description}>
-        Your personal healthcare management platform — easy, secure, and efficient.
+        Your personal healthcare management platform
+ 
       </p>
       <div className={styles.buttons}>
         <button onClick={() => handleHide('/login')} className={`${styles.btn} ${styles.primaryBtn}`}>
