@@ -12,7 +12,6 @@ import ChatContainer from './components/Chat/ChatContainer';
 import DoctorSearch from './components/relationships/DoctorSearch';
 import PendingRequests from './components/relationships/PendingRequests';
 import MyCollaborations from './components/relationships/MyCollaborations';
-
 import BookAppointment from './pages/appointments/BookAppointment';
 import ManageSlots from './pages/appointments/ManageSlots';
 
