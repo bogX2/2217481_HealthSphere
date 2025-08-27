@@ -26,4 +26,12 @@ const Appointment = sequelize.define('Appointment', {
   timestamps: true
 });
 
+Appointment.associate = function(models) {
+  Appointment.belongsTo(models.AppointmentSlot, {
+    foreignKey: 'slotId',
+    as: 'slot',
+    constraints: false // Important for our architecture
+  });
+};
+
 module.exports = Appointment;

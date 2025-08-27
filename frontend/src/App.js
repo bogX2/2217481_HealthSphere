@@ -14,6 +14,7 @@ import PendingRequests from './components/relationships/PendingRequests';
 import MyCollaborations from './components/relationships/MyCollaborations';
 import BookAppointment from './pages/appointments/BookAppointment';
 import ManageSlots from './pages/appointments/ManageSlots';
+import AppointmentList from './pages/appointments/AppointmentList';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
 
           <Route path="/appointments/book/:doctorId" element={<BookAppointment />} />
           <Route path="/manageslots" element={<ManageSlots />} />
+          <Route path="/appointmentlist" element={<AppointmentList />} />
         </Routes>
       </AuthProvider>
     </Router>

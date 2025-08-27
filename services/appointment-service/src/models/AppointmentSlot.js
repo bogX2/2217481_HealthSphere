@@ -27,4 +27,12 @@ const AppointmentSlot = sequelize.define('AppointmentSlot', {
   timestamps: true
 });
 
+AppointmentSlot.associate = function(models) {
+  AppointmentSlot.hasMany(models.Appointment, {
+    foreignKey: 'slotId',
+    as: 'appointments',
+    constraints: false // Important for our architecture
+  });
+};
+
 module.exports = AppointmentSlot;

@@ -9,10 +9,19 @@ const cors = require('cors');
 
 const app = express();
 
+// Import models
+const Appointment = require('./models/Appointment');
+const AppointmentSlot = require('./models/AppointmentSlot');
+
+// Initialize associations
+Appointment.associate({ AppointmentSlot });
+AppointmentSlot.associate({ Appointment });
+
 app.use(cors({
   origin: 'http://localhost:3001', // dominio del frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 app.use(express.json());
 
