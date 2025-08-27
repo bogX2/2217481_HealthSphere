@@ -100,7 +100,7 @@ const Profile = () => {
                 </div>
               </div>
               <div className="col">
-                <div className="card h-100 shadow-sm option-card" onClick={() => navigate('/bookappointment')}>
+                <div className="card h-100 shadow-sm option-card" onClick={() => navigate('/appointments/book/')}>
                   <div className="card-body text-center">
                     <div className="fs-1 mb-2">📅</div>
                     <h5 className="card-title fw-bold text-primary">Book an Appointment</h5>

@@ -99,6 +99,7 @@ services:
     environment:
       - USER_SERVICE_URL=http://user-service:8081
       - FRONTEND_URL=http://localhost:3001
+      - APPOINTMENT_SERVICE_URL=http://appointment-service:8083
     depends_on:
       - user-service
 

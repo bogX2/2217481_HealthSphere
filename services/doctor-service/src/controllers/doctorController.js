@@ -285,6 +285,32 @@ const getDoctor = async (req, res) => {
   }
 };
 
+
+const getDoctorByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Find the doctor record associated with this user
+    const doctor = await Doctor.findOne({
+      where: { userId }
+    });
+    
+    if (!doctor) {
+      return res.status(404).json({ 
+        error: 'Doctor profile not found' 
+      });
+    }
+    
+    res.json({ doctor });
+  } catch (err) {
+    console.error('Error getting doctor by user ID:', err);
+    res.status(500).json({ 
+      error: 'Failed to get doctor profile',
+      details: err.message 
+    });
+  }
+};
+
 module.exports = {
   upsertDoctor,
   uploadDocument,
@@ -293,5 +319,6 @@ module.exports = {
   getAvailability,
   searchDoctors,
   verifyDoctor,
-  getDoctor
+  getDoctor,
+  getDoctorByUserId
 };

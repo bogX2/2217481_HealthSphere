@@ -10,7 +10,8 @@ const {
   getAvailability,
   searchDoctors,
   verifyDoctor,
-  getDoctor
+  getDoctor,
+  getDoctorByUserId
 } = require('../controllers/doctorController');
 const relationshipController = require('../controllers/relationshipController');
 
@@ -68,6 +69,8 @@ router.get('/doctor', authenticateToken, authorizeRole(['doctor', 'admin']),
 // Get all relationships for a patient
 router.get('/patient', authenticateToken, authorizeRole(['patient', 'admin']), 
   relationshipController.getPatientRelationships);
+
+ router.get('/user/:userId', authenticateToken, getDoctorByUserId);
 
 // Allow service-to-service calls for profile creation
 //router.post('/', serviceAuth, upsertDoctor);

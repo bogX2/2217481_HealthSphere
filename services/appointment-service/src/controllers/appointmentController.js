@@ -20,7 +20,7 @@ exports.createSlot = async (req, res) => {
 exports.bookAppointment = async (req, res) => {
   try {
     const slotId = req.body.slotId;
-    const patientId = req.user.id;
+    const patientId = req.user.userId || req.user.id;
 
     const slot = await AppointmentSlot.findByPk(slotId);
     if (!slot) return res.status(404).json({ error: 'Slot not found' });
@@ -73,12 +73,82 @@ exports.getPatientAppointments = async (req, res) => {
 //functionality to get all the doctor's slot
 exports.getDoctorSlots = async (req, res) => {
   try {
-    const doctorId = req.user.userId; // preso dal token del doctor
+    const doctorId = req.params.doctorId;
+    
+    // Get all slots for this doctor
     const slots = await AppointmentSlot.findAll({
-      where: { doctorId }
+      where: { doctorId },
+      order: [['date', 'ASC'], ['startTime', 'ASC']]
     });
+    
+    // If user is a patient, only show available slots
+    if (req.user.role === 'patient') {
+      res.json({ 
+        slots: slots.filter(slot => !slot.isBooked) 
+      });
+    } else {
+      // Doctors see all slots (booked and available)
+      res.json({ slots });
+    }
+  } catch (err) {
+    console.error('Error getting doctor slots:', err);
+    res.status(500).json({ 
+      error: 'Failed to get slots',
+      details: err.message 
+    });
+  }
+};
+
+
+// Get available slots for a doctor (only if patient has active relationship)
+exports.getAvailableSlotsForPatient = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    const { doctorId } = req.params;
+    
+    // Get the patient's relationships to verify access
+    try {
+      const relationshipsResponse = await axios.get(
+        `${process.env.USER_SERVICE_URL}/api/doctors/relationships/patient`,
+        { 
+          headers: { 
+            'Authorization': req.headers.authorization,
+            'Internal-Service-Token': process.env.INTERNAL_SERVICE_TOKEN 
+          } 
+        }
+      );
+      
+      const hasRelationship = relationshipsResponse.data.some(
+        rel => rel.doctorId === parseInt(doctorId) && rel.status === 'active'
+      );
+      
+      if (!hasRelationship) {
+        return res.status(403).json({ 
+          error: 'You do not have an active relationship with this doctor' 
+        });
+      }
+    } catch (relError) {
+      console.error('Error checking relationships:', relError);
+      return res.status(500).json({ 
+        error: 'Failed to verify doctor-patient relationship' 
+      });
+    }
+    
+    // Get ONLY available (unbooked) slots for the doctor
+    const slots = await AppointmentSlot.findAll({
+      where: { 
+        doctorId,
+        isBooked: false
+      },
+      order: [['date', 'ASC'], ['startTime', 'ASC']]
+    });
+    
     res.json({ slots });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error getting available slots:', err);
+    res.status(500).json({ 
+      error: 'Failed to get available slots',
+      details: err.message 
+    });
   }
 };

@@ -16,14 +16,31 @@ const ManageSlots = () => {
 
   const fetchSlots = useCallback(async () => {
     try {
-      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+      let userId = null;
+      
+      // Extract userId from the token
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.id; // This is the user ID from the token
+        } catch (e) {
+          console.error('Error parsing token:', e);
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('User ID not found in token');
+      }
+      
       const res = await axios.get(`${backendURL}/slots/doctor/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setSlots(res.data.slots || []);
     } catch (err) {
       console.error('Error fetching slots:', err);
-      setError('Unable to retrieve slots.');
+      setError('Unable to retrieve slots. ' + (err.message || ''));
     }
   }, [backendURL, token]);
 

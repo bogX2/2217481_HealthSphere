@@ -25,23 +25,53 @@ const BookAppointment = () => {
     }
   }, [doctorId]);
 
+
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   // 🔹 Fetch Doctor's Available Slots
   const fetchSlots = useCallback(async () => {
+
+    // Don't proceed if doctor data isn't available yet
+    if (!doctor) {
+      return;
+    }
+    
+    setLoadingSlots(true);
+
     try {
-      const res = await axios.get(`${backendURL}/doctor/${doctorId}/slots`, {
+      const token = localStorage.getItem('token');
+      
+      //Use the USER ID (72 or 105), NOT the doctor table ID (1 or 34)
+      const userId = doctor.userId;
+      
+      // Get the slots using the CORRECT USER ID
+      const slotsResponse = await axios.get(`${backendURL}/slots/doctor/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSlots(res.data.slots.filter(slot => !slot.isBooked) || []);
+      
+      setSlots(slotsResponse.data.slots || []);
+      if (slotsResponse.data.slots && slotsResponse.data.slots.length === 0) {
+        setError("No available slots at the moment. Please check back later.");
+      }
     } catch (err) {
       console.error('Error fetching slots:', err);
-      setError('Unable to retrieve slots.');
+      let errorMessage = 'Unable to retrieve slots.';
+      if (err.response?.status === 404 && err.response?.data?.error?.includes('Doctor profile not found')) {
+        errorMessage = "Doctor profile not found. Please check if the doctor has completed registration.";
+      } else if (err.response?.data?.error) {
+        errorMessage = `Error: ${err.response.data.error}`;
+      }
+      setError(errorMessage);
+    } finally {
+        setLoadingSlots(false);
     }
-  }, [doctorId, backendURL, token]);
+  }, [doctor, backendURL, token]);
 
   useEffect(() => {
     fetchDoctorInfo();
     fetchSlots();
   }, [fetchDoctorInfo, fetchSlots]);
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -49,22 +79,56 @@ const BookAppointment = () => {
     navigate('/');
   };
 
+
   // 🔹 Handle Appointment Booking
   const handleBook = async (e) => {
     e.preventDefault();
     setError('');
-    if (!selectedSlot) return setError('Please select an available slot!');
-
+    
+    if (!selectedSlot) {
+      return setError('Please select an available slot!');
+    }
+    
     try {
-      await axios.post(`${backendURL}/book-appointment`, { slotId: selectedSlot }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.post(
+        `${backendURL}/book`,  // CORRECTED ENDPOINT
+        { 
+          slotId: selectedSlot 
+        },
+        {
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          }
+        }
+      );
+      
       alert('Appointment booked successfully!');
       fetchSlots(); // Refresh the slot list
       setSelectedSlot('');
+      
+      // Optional: Navigate to appointments page after successful booking
+      // navigate('/appointments');
     } catch (err) {
       console.error('Booking error:', err);
-      setError(err.response?.data?.error || 'Error during booking.');
+      
+      // FIX #2: Better error handling to see what's really happening
+      let errorMessage = 'Error during booking.';
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (err.response.status === 404) {
+          errorMessage = 'Slot not found. It may have been booked by someone else.';
+        } else if (err.response.status === 400 && err.response.data.error === 'Slot already booked') {
+          errorMessage = 'This slot has already been booked. Please select another.';
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response from server. Please check your connection.';
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -109,8 +173,8 @@ const BookAppointment = () => {
               >
                 <option value="">-- Select a slot --</option>
                 {slots.map(slot => (
-                  <option key={slot._id} value={slot._id}>
-                    {slot.date} {slot.startTime} - {slot.endTime}
+                  <option key={slot.id} value={slot.id}>
+                    {new Date(slot.date).toLocaleDateString()} {slot.startTime} - {slot.endTime}
                   </option>
                 ))}
               </select>
