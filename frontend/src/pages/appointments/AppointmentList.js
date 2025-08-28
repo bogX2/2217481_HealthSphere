@@ -137,16 +137,20 @@ const AppointmentList = () => {
       await axios.put(
         `${backendURL}/cancel/${appointmentId}`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          }
+        }
       );
       
-      // Refresh appointments list using ACTUAL user ID
-      const actualUserId = getActualUserId();
+      // Refresh appointments list
+      const userId = getActualUserId();
       const response = user.role === 'doctor'
-        ? await axios.get(`${backendURL}/doctor/${actualUserId}`, {
+        ? await axios.get(`${backendURL}/doctor/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           })
-        : await axios.get(`${backendURL}/patient/${actualUserId}`, {
+        : await axios.get(`${backendURL}/patient/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
       
@@ -154,7 +158,13 @@ const AppointmentList = () => {
       alert('Appointment cancelled successfully!');
     } catch (err) {
       console.error('Error cancelling appointment:', err);
-      alert('Failed to cancel appointment. Please try again.');
+      
+      // Improved error message
+      let errorMessage = 'Failed to cancel appointment.';
+      if (err.response?.data?.error) {
+        errorMessage += ` ${err.response.data.error}`;
+      }
+      alert(errorMessage);
     }
   };
   
@@ -224,7 +234,7 @@ const AppointmentList = () => {
               <Button 
                 variant="outline-primary" 
                 size="sm"
-                onClick={() => navigate(`/chat?with=${user?.role === 'doctor' ? appointment.patient.id : appointment.doctor.id}`)}
+                onClick={() => navigate(`/chat?with=${user?.role === 'doctor' ? appointment.patient.id : appointment.doctor.userId}`)}
               >
                 Message {user?.role === 'doctor' ? 'Patient' : 'Doctor'}
               </Button>

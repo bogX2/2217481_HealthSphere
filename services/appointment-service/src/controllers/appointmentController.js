@@ -43,6 +43,52 @@ exports.bookAppointment = async (req, res) => {
 };
 
 
+exports.cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const userId = req.user.userId || req.user.id;
+    const role = req.user.role;
+    
+    const appointment = await Appointment.findByPk(appointmentId);
+    
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    // Check if the user has permission to cancel this appointment
+    if (
+      (role === 'patient' && appointment.patientId !== Number(userId)) ||
+      (role === 'doctor' && appointment.doctorId !== Number(userId)) ||
+      (role !== 'patient' && role !== 'doctor' && role !== 'admin')
+    ) {
+      return res.status(403).json({ 
+        error: 'You do not have permission to cancel this appointment' 
+      });
+    }
+    
+    // Update appointment status
+    await appointment.update({ status: 'cancelled' });
+    
+    // Update slot availability
+    await AppointmentSlot.update(
+      { isBooked: false },
+      { where: { id: appointment.slotId } }
+    );
+    
+    res.json({ 
+      message: 'Appointment cancelled successfully',
+      appointment: appointment.toJSON()
+    });
+  } catch (err) {
+    console.error('Error cancelling appointment:', err);
+    res.status(500).json({ 
+      error: 'Failed to cancel appointment',
+      details: err.message
+    });
+  }
+};
+
+
 // Helper function to get the actual user ID from request
 const getActualUserId = (req) => {
   // Try multiple possible locations for the user ID
@@ -80,32 +126,6 @@ const fetchUserDetails = async (userId, req) => {
   }
 };
 
-// Create a helper function to fetch doctor details
-const fetchDoctorDetails = async (doctorId, req) => {
-  try {
-    const doctorResp = await axios.get(
-      `http://doctor-service:8082/api/doctors/${doctorId}`,
-      {
-        headers: { 'Authorization': req.headers.authorization }
-      }
-    );
-    
-    return {
-      id: doctorResp.data.doctor.id,
-      firstName: doctorResp.data.doctor.firstName,
-      lastName: doctorResp.data.doctor.lastName,
-      specialty: doctorResp.data.doctor.specialty
-    };
-  } catch (err) {
-    console.error(`Error fetching doctor ${doctorId}:`, err.response?.data || err.message);
-    return {
-      id: doctorId,
-      firstName: 'Unknown',
-      lastName: 'Doctor',
-      specialty: 'Unknown'
-    };
-  }
-};
 
 exports.getDoctorAppointments = async (req, res) => {
   try {
@@ -174,11 +194,114 @@ exports.getDoctorAppointments = async (req, res) => {
   }
 };
 
+
+const getUserDetails = async (userId, req) => {
+  try {
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    const userResp = await axios.get(
+      `${userServiceUrl}/api/users/${userId}/public`,
+      {
+        headers: { 'Authorization': req.headers.authorization }
+      }
+    );
+    
+    return {
+      id: userResp.data.id,
+      firstName: userResp.data.firstName,
+      lastName: userResp.data.lastName,
+      email: userResp.data.email
+    };
+  } catch (err) {
+    console.error(`Error fetching user details for ${userId}:`, 
+      err.response?.data || err.message);
+    return {
+      id: userId,
+      firstName: 'Unknown',
+      lastName: 'Doctor',
+      email: 'unknown@example.com'
+    };
+  }
+};
+
+
+const getDoctorWithUserDetails = async (userId, req) => {
+  try {
+    console.log(`Fetching doctor profile for user ID: ${userId}`);
+    
+    // First, get the doctor profile to verify this user is a doctor
+    const doctorResp = await axios.get(
+      `http://doctor-service:8082/api/doctors/user/${userId}`,
+      {
+        headers: { 'Authorization': req.headers.authorization }
+      }
+    );
+    
+    console.log(`Doctor profile found:`, {
+      doctorId: doctorResp.data.doctor.id,
+      userId: doctorResp.data.doctor.userId,
+      specialty: doctorResp.data.doctor.specialty
+    });
+    
+    // Now, get the user details to get firstName and lastName
+    const userDetails = await getUserDetails(userId, req);
+    
+    console.log(`User details found:`, {
+      id: userDetails.id,
+      firstName: userDetails.firstName,
+      lastName: userDetails.lastName
+    });
+    
+    // Return combined doctor and user details
+    return {
+      id: doctorResp.data.doctor.id,
+      userId: doctorResp.data.doctor.userId,
+      firstName: userDetails.firstName,
+      lastName: userDetails.lastName,
+      specialty: doctorResp.data.doctor.specialty,
+      bio: doctorResp.data.doctor.bio,
+      verificationStatus: doctorResp.data.doctor.verificationStatus
+    };
+  } catch (err) {
+    console.error(`Error getting doctor with user details for user ${userId}:`, {
+      status: err.response?.status,
+      data: err.response?.data,
+      message: err.message
+    });
+    
+    try {
+      // Even if doctor profile fails, try to get user details
+      const userDetails = await getUserDetails(userId, req);
+      return {
+        id: null,
+        userId: userId,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        specialty: 'Unknown',
+        bio: 'No doctor profile available',
+        verificationStatus: 'unknown'
+      };
+    } catch (userErr) {
+      console.error(`Failed to get user details for ${userId}:`, userErr);
+      return {
+        id: null,
+        userId: userId,
+        firstName: 'Unknown',
+        lastName: 'Doctor',
+        specialty: 'Unknown',
+        bio: 'Error retrieving doctor information',
+        verificationStatus: 'error'
+      };
+    }
+  }
+};
+
+
 exports.getPatientAppointments = async (req, res) => {
   try {
     const { patientId } = req.params;
     
-    const callerId = req.user?.userId;
+    // Get the user ID correctly
+    const callerId = req.user?.userId || req.user?.id;
     
     console.log('Appointment query:', {
       requestedPatientId: patientId,
@@ -208,13 +331,37 @@ exports.getPatientAppointments = async (req, res) => {
       }]
     });
     
+    console.log(`Found ${appointments.length} appointments for patient ${patientId}`);
+    
     // Enrich with doctor details
     const enrichedAppointments = await Promise.all(appointments.map(async (appointment) => {
       try {
-        const doctor = await fetchDoctorDetails(appointment.doctorId, req);
+        console.log(`Enriching appointment ${appointment.id} with doctor details for doctor user ID: ${appointment.doctorId}`);
+        
+        // Get doctor details WITH USER INFORMATION
+        const doctor = await getDoctorWithUserDetails(appointment.doctorId, req);
+        
+        if (!doctor) {
+          throw new Error('Doctor details not found');
+        }
+        
+        console.log(`Successfully enriched appointment with doctor:`, {
+          id: doctor.id,
+          userId: doctor.userId,
+          name: `${doctor.firstName} ${doctor.lastName}`
+        });
+        
         return {
           ...appointment.toJSON(),
-          doctor,
+          doctor: {
+            id: doctor.id,
+            userId: doctor.userId,
+            firstName: doctor.firstName,
+            lastName: doctor.lastName,
+            specialty: doctor.specialty,
+            bio: doctor.bio,
+            verificationStatus: doctor.verificationStatus
+          },
           slot: appointment.slot
         };
       } catch (err) {
@@ -223,20 +370,36 @@ exports.getPatientAppointments = async (req, res) => {
           ...appointment.toJSON(),
           doctor: {
             id: appointment.doctorId,
+            userId: appointment.doctorId,
             firstName: 'Unknown',
-            lastName: 'Doctor'
+            lastName: 'Doctor',
+            specialty: 'Unknown',
+            bio: 'Error retrieving doctor information',
+            verificationStatus: 'error'
           },
           slot: appointment.slot
         };
       }
     }));
     
+    console.log('Returning enriched appointments:', {
+      count: enrichedAppointments.length,
+      appointments: enrichedAppointments.map(a => ({
+        id: a.id,
+        doctorName: `${a.doctor.firstName} ${a.doctor.lastName}`,
+        specialty: a.doctor.specialty,
+        date: a.slot?.date,
+        startTime: a.slot?.startTime
+      }))
+    });
+    
     res.json({ appointments: enrichedAppointments });
   } catch (err) {
     console.error('Error fetching patient appointments:', err);
     res.status(500).json({ 
       error: 'Internal server error',
-      details: err.message
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 };
