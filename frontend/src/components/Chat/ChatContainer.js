@@ -1,125 +1,142 @@
 // frontend/src/components/Chat/ChatContainer.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useAuth } from '../../auth/AuthProvider';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import ChatSearch from './ChatSearch';
-import { useNavigate, useLocation } from 'react-router-dom';
 import './ChatContainer.css';
 
 const ChatContainer = () => {
-  const { currentUser, token } = useAuth();
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { currentUser } = useAuth();
   const [chats, setChats] = useState([]);
-  const [loadingChats, setLoadingChats] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const shouldStartNewChat = location.state?.startNewChat;
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [shouldStartNewChat, setShouldStartNewChat] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Fetch user chats when currentUser is available
   useEffect(() => {
-    if (!currentUser || !token) return;
+    if (currentUser) {
+      fetchUserChats();
+    }
+  }, [currentUser]);
+
+  const fetchUserChats = async () => {
+    if (!currentUser) return;
     
-    const fetchChats = async () => {
-      setLoadingChats(true);
-      setError(null);
+    try {
+      setLoading(true);
+      setError('');
       
-      try {
-        const response = await fetch('http://localhost:8084/api/chats/user', {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/communication/user`, 
+        {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch chats: ${response.statusText}`);
         }
-        
-        const data = await response.json();
-        setChats(data.chats || []);
-      } catch (err) {
-        console.error('Error fetching chats:', err);
-        setError('Failed to load chat list.');
-      } finally {
-        setLoadingChats(false);
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user chats: ${response.status}`);
       }
-    };
-    
-    fetchChats();
-  }, [currentUser, token]);
+      
+      const data = await response.json();
+      setChats(data.chats || []);
+      
+      // If there are chats but none selected, select the first one
+      if (data.chats && data.chats.length > 0 && !selectedChat) {
+        setSelectedChat(data.chats[0]);
+      }
+    } catch (err) {
+      console.error('Error fetching user chats:', err);
+      setError('Failed to load your chats. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChatSelect = (chat) => {
     setSelectedChat(chat);
+    setShouldStartNewChat(false);
   };
 
   const handleStartNewChat = () => {
-    navigate('/chat', { state: { startNewChat: true } });
+    setShouldStartNewChat(true);
   };
 
   const handleBackToList = () => {
     setSelectedChat(null);
-    if (location.state?.startNewChat) {
-      navigate('/chat', { replace: true });
-    }
+    setShouldStartNewChat(false);
   };
 
-  // Show loading while auth is initializing
-  if (!currentUser) {
-    return <div className="chat-container">Caricamento...</div>;
-  }
+  const handleChatCreated = (chat) => {
+    // Add the new chat to the list
+    setChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]);
+    setSelectedChat(chat);
+    setShouldStartNewChat(false);
+  };
 
-  // Show loading while chats are being fetched
-  if (loadingChats && !error) {
-    return <div className="chat-container">Caricamento chat...</div>;
+  if (!currentUser) {
+    return (
+      <div className="chat-container">
+        <div className="chat-placeholder">
+          <p>Please log in to access your chats</p>
+          <button onClick={() => window.location.href = '/login'}>
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="chat-container">
-      {!selectedChat && !shouldStartNewChat && (
+      <div className="chat-sidebar">
         <div className="chat-header">
-          <h2>Le tue chat</h2>
-          <button className="btn primary-btn" onClick={handleStartNewChat}>
-            Nuova chat
+          <h2>Messages</h2>
+          <button className="new-chat-button" onClick={handleStartNewChat}>
+            + New Chat
           </button>
         </div>
-      )}
-      
-      {shouldStartNewChat && !selectedChat && (
-        <div className="new-chat-header">
-          <button className="back-button" onClick={handleBackToList}>
-            ← Indietro
-          </button>
-          <h2>Nuova chat</h2>
-        </div>
-      )}
-
-      <div className="chat-content">
-        {error ? (
-          <div className="error-message">{error}</div>
-        ) : !selectedChat && !shouldStartNewChat ? (
-          <ChatList 
-            chats={chats}
-            onSelectChat={handleChatSelect} 
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
-        ) : shouldStartNewChat ? (
+        
+        {error && <div className="error-banner">{error}</div>}
+        
+        {shouldStartNewChat ? (
           <ChatSearch 
-            currentUser={currentUser}
-            onChatSelected={handleChatSelect}
+            currentUser={currentUser} 
+            onChatSelected={handleChatCreated}
             onBack={handleBackToList}
           />
         ) : (
-          <ChatWindow 
-            chat={selectedChat} 
-            onBack={handleBackToList} 
+          <ChatList
+            chats={chats}
+            onSelectChat={handleChatSelect}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            loading={loading}
           />
         )}
+      </div>
+      
+      <div className="chat-main">
+        {selectedChat ? (
+          <ChatWindow 
+            chat={selectedChat} 
+            onBack={handleBackToList}
+            currentUser={currentUser}
+          />
+        ) : !shouldStartNewChat ? (
+          <div className="chat-placeholder">
+            <h3>Select a chat or start a new conversation</h3>
+            <button className="primary-button" onClick={handleStartNewChat}>
+              Start New Chat
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

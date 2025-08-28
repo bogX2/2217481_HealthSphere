@@ -52,13 +52,15 @@ async function connectWithRetry() {
     await sequelize.sync({ alter: true });
     console.log('Doctor DB synced');
 
+    app.use('/api/internal', internalRoutes);
+
     // serve uploads statically (for demo only; in prod serve from S3/secure)
     const uploadsPath = path.resolve(__dirname, '../uploads');
     app.use('/uploads', express.static(uploadsPath));
 
     app.use('/api/doctors', doctorRoutes);
 
-    app.use('/internal', internalRoutes);
+    //app.use('/internal', internalRoutes);
 
     app.get('/health', (req, res) => res.json({ status: 'Doctor Service running', port: PORT }));
 

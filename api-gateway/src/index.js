@@ -81,8 +81,26 @@ app.use('/api/communication', createProxyMiddleware({
   target: services.communication,
   ...proxyOptions,
   pathRewrite: {
-    '^/api/communication': '/api/communication' 
+    '^/api/communication': '/api/chats'
   }
+}));
+
+
+app.use('/api/internal', createProxyMiddleware({
+  target: services.user,
+  ...proxyOptions
+}));
+
+app.use('/api/internal', createProxyMiddleware({
+  target: services.doctor,
+  ...proxyOptions
+}));
+
+// Add this route for internal service communication
+app.use('/api/internal', createProxyMiddleware({
+  target: services.communication,
+  ...proxyOptions
+  // No path rewrite needed as services should handle /api/internal
 }));
 
 

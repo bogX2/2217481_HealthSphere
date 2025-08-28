@@ -1,51 +1,59 @@
 // frontend/src/components/Chat/ChatSearch.js
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../auth/AuthProvider';
-import api from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import './ChatSearch.css';
 
 const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
-  const { token } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (searchQuery.length > 2) {
-      handleSearch();
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
+    fetchCollaborations();
+  }, []);
 
-  const handleSearch = async () => {
-    setLoading(true);
-    setError(null);
-    
+  const fetchCollaborations = async () => {
     try {
-      const response = await api.get('/api/communication/users/search', {
-        params: { 
-          query: searchQuery,
-          excludeUserId: currentUser.id
-        },
-        headers: { 
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      setLoading(true);
+      setError('');
       
-      // Process the results to include relationship info
-      const usersWithRelationship = response.data.users.map(user => ({
-        ...user,
-        // Default to false if not provided by backend
-        hasRelationship: user.hasRelationship !== undefined ? user.hasRelationship : false
-      }));
+      let collaborations = [];
       
-      setSearchResults(usersWithRelationship);
+      if (currentUser.role === 'doctor') {
+        const response = await api.get('doctors/relationships/doctor');
+        collaborations = response.data.requests || [];
+      } else if (currentUser.role === 'patient') {
+        const response = await api.get('doctors/relationships/patient');
+        collaborations = response.data.relationships || [];
+      }
+      
+      // Extract the other user's details from the collaborations
+      const users = collaborations
+        .filter(collab => collab.status === 'active') // Only active relationships
+        .map(collab => {
+          if (currentUser.role === 'doctor') {
+            return {
+              ...collab.patient, // Assuming patient details are included
+              id: collab.patientId,
+              role: 'patient',
+              hasRelationship: true
+            };
+          } else {
+            return {
+              ...collab.doctor, // Assuming doctor details are included
+              id: collab.doctorId,
+              role: 'doctor',
+              hasRelationship: true
+            };
+          }
+        });
+      
+      setSearchResults(users);
     } catch (err) {
-      console.error('Error searching users:', err);
-      setError('Errore durante la ricerca degli utenti');
+      console.error('Error fetching collaborations:', err);
+      setError('Failed to load your collaborations');
     } finally {
       setLoading(false);
     }
@@ -53,12 +61,13 @@ const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
 
   const handleUserSelect = async (user) => {
     try {
-      // Check if a chat already exists or create a new one
-      const response = await api.post('/api/communication/chats', {
+      const token = localStorage.getItem('token');
+      // Create chat with the selected user (should always succeed since we filtered by relationships)
+      const response = await api.post('/api/communication', {
         participant1Id: currentUser.id,
         participant2Id: user.id
       }, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`
         }
       });
@@ -66,12 +75,11 @@ const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
       onChatSelected(response.data.chat);
     } catch (err) {
       console.error('Error creating chat:', err);
-      
-      // Handle specific error for relationship validation
+      // This should not happen since we're only showing users with active relationships
       if (err.response && err.response.status === 403) {
-        setError('Non è possibile avviare una chat con questo utente. Non esiste una relazione valida (prenotazione/appuntamento).');
+        setError('Cannot chat with this user. No valid relationship exists.');
       } else {
-        setError('Impossibile avviare la chat. Riprova.');
+        setError('Failed to start chat. Please try again.');
       }
     }
   };
@@ -79,46 +87,38 @@ const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
   return (
     <div className="chat-search">
       <div className="search-header">
-        <input
-          type="text"
-          placeholder="Cerca utente..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-        />
         <button className="back-button" onClick={onBack}>
-          ← Indietro
+          ← Back to Chats
         </button>
+        <h2>Start New Chat</h2>
       </div>
       
       {error && <div className="error-message">{error}</div>}
       
-      <div className="search-results">
-        {searchQuery.length <= 2 ? (
-          <div className="search-instructions">
-            Inserisci almeno 3 caratteri per cercare un utente
-          </div>
-        ) : loading ? (
-          <div className="loading">Ricerca in corso...</div>
-        ) : searchResults.length === 0 && searchQuery.length > 2 ? (
-          <div className="no-results">
-            Nessun utente trovato
-          </div>
-        ) : (
-          searchResults.map(user => {
-            // Determine if this user has a valid relationship
-            const isValidRelationship = user.hasRelationship || 
-              (currentUser.role === 'doctor' && user.role === 'patient') || 
-              (currentUser.role === 'patient' && user.role === 'doctor');
-            
+      {loading ? (
+        <div className="loading">Loading your collaborations...</div>
+      ) : searchResults.length === 0 ? (
+        <div className="no-results">
+          You don't have any active collaborations yet.<br />
+          <button 
+            className="primary-button" 
+            onClick={() => navigate('/doctors/search')}
+          >
+            Find Doctors
+          </button>
+        </div>
+      ) : (
+        <div className="search-results">
+          {searchResults.map(user => {
+            const isValidRelationship = user.hasRelationship;
             return (
-              <div 
-                key={user.id} 
+              <div
+                key={user.id}
                 className={`search-result-item ${!isValidRelationship ? 'disabled' : ''}`}
                 onClick={isValidRelationship ? () => handleUserSelect(user) : null}
-                title={isValidRelationship ? 
-                  '' : 
-                  'Non è possibile avviare una chat senza una relazione valida (prenotazione/appuntamento)'}
+                title={isValidRelationship 
+                  ? '' 
+                  : 'Cannot start chat without a valid relationship'}
               >
                 <div className="user-avatar">
                   {user.firstName?.[0]}{user.lastName?.[0]}
@@ -128,19 +128,19 @@ const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
                     {user.firstName} {user.lastName}
                   </div>
                   <div className="user-role">
-                    {user.role === 'doctor' ? 'Medico' : 'Paziente'}
+                    {user.role === 'doctor' ? 'Doctor' : 'Patient'}
                   </div>
                 </div>
                 {!isValidRelationship && (
                   <div className="relationship-warning">
-                    Nessuna relazione valida
+                    No active relationship
                   </div>
                 )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 };

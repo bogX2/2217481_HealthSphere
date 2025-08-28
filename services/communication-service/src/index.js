@@ -6,6 +6,8 @@ const chatRoutes = require('./routes/chat');
 const { initializeSocket } = require('./controllers/messageController');
 const http = require('http'); // Needed for Socket.IO
 
+const internalRoutes = require('./routes/internal');
+
 const app = express();
 
 // CORS setup (adjust origin for your frontend)
@@ -21,6 +23,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 8084;
 
 // Routes
+app.use('/api/internal', internalRoutes);
 app.use('/api/chats', chatRoutes); // Prefix all chat routes with /api/chats
 
 // Basic health check or root route

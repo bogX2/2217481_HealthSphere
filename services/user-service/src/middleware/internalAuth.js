@@ -1,28 +1,31 @@
+// services/user-service/src/middleware/internalAuth.js
 const jwt = require('jsonwebtoken');
-// Define all valid services in your system
-const VALID_SERVICES = ['user-service', 'doctor-service', 'communication-service', 'appointment-service'];
+require('dotenv').config();
 
 const authenticateInternalService = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
   
   if (!token) {
-    return res.status(401).json({ error: 'Service token required in Authorization header' });
+    return res.status(401).json({ 
+      error: 'Service token required in Authorization header' 
+    });
   }
   
   try {
     // Verify using the INTERNAL_SERVICE_SECRET
     const decoded = jwt.verify(token, process.env.INTERNAL_SERVICE_SECRET);
     
-    // Check if the service name is valid
-    if (!VALID_SERVICES.includes(decoded.service)) {
+    // Optional: Verify the service name
+    const validServices = ['user-service', 'doctor-service', 'communication-service', 'appointment-service'];
+    if (!validServices.includes(decoded.service)) {
       return res.status(403).json({ 
-        error: `Invalid service in token: ${decoded.service}`,
-        validServices: VALID_SERVICES 
+        error: `Invalid service: ${decoded.service}`,
+        validServices: validServices 
       });
     }
     
-    // Optional: Check permissions based on route
+    // Optional: Verify permissions
     if (req.path.includes('/users/') && req.method === 'GET') {
       if (!decoded.permissions || !decoded.permissions.includes('read:user:public')) {
         return res.status(403).json({ 
@@ -31,8 +34,6 @@ const authenticateInternalService = (req, res, next) => {
       }
     }
     
-    // Attach decoded info to request for reference
-    req.serviceAuth = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ 

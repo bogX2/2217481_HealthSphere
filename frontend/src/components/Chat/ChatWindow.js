@@ -40,8 +40,10 @@ const ChatWindow = ({ chat }) => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const token = getAuthToken();
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000'}/api/communication/chats/${chat.id}/history`, {
+        setLoadingHistory(true);
+        setError('');
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/communication/${chat.id}/history`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -57,7 +59,7 @@ const ChatWindow = ({ chat }) => {
         setMessages(data.messages || []);
       } catch (err) {
         console.error('Error fetching chat history:', err);
-        setError('Failed to load message history.');
+        setError('Failed to load message history');
       } finally {
         setLoadingHistory(false);
       }

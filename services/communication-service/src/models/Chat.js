@@ -32,6 +32,12 @@ const Chat = sequelize.define('Chat', {
   // createdAt, updatedAt handled by Sequelize timestamps
 }, {
   timestamps: true,
+  toJSON: { 
+    transform: (instance, options) => {
+      const jsonObject = instance.get({ plain: true });
+      return jsonObject;
+    }
+  },
   // Add indexes for participant1Id, participant2Id, appointmentId
   indexes: [
     { fields: ['participant1Id'] },

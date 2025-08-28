@@ -4,6 +4,7 @@ const cors = require('cors');
 const sequelize = require('./config/database');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const internalRoutes = require('./routes/internal');
 
 const app = express();
 
@@ -46,6 +47,7 @@ async function connectWithRetry() {
     console.log('Database synced');
 
     // Routes
+    app.use('/api/internal', internalRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
 

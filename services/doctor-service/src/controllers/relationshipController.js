@@ -2,6 +2,20 @@ const DoctorPatientRelationship = require('../models/DoctorPatientRelationship')
 const Doctor = require('../models/Doctor');
 const { Op } = require('sequelize');
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
+
+
+// Helper function to create service token
+function createServiceToken(service, permissions = []) {
+  return jwt.sign(
+    { 
+      service,
+      permissions 
+    }, 
+    process.env.INTERNAL_SERVICE_SECRET,
+    { expiresIn: '5m' }
+  );
+}
 
 
 // Request a relationship with a doctor
@@ -113,28 +127,26 @@ exports.getPendingRelationships = async (req, res) => {
 exports.acceptRelationship = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // This is the USER ID, not the DOCTOR ID
+    const userId = req.user.id;
     
-    // First, find the Doctor record associated with this user
     const doctor = await Doctor.findOne({ where: { userId } });
     if (!doctor) {
-      return res.status(404).json({ 
-        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      return res.status(404).json({
+        error: 'Doctor profile not found. Please complete your doctor registration.'
       });
     }
     
-    // Now use the ACTUAL DOCTOR ID to find the relationship
     const relationship = await DoctorPatientRelationship.findOne({
       where: { 
-        id, 
-        doctorId: doctor.id,  // CRITICAL: Use doctor.id, not userId
-        status: 'pending' 
+        id,
+        doctorId: doctor.id,
+        status: 'pending'
       }
     });
     
     if (!relationship) {
-      return res.status(404).json({ 
-        error: 'Relationship request not found or already processed' 
+      return res.status(404).json({
+        error: 'Relationship request not found or already processed'
       });
     }
     
@@ -142,6 +154,30 @@ exports.acceptRelationship = async (req, res) => {
       status: 'active',
       respondedAt: new Date()
     });
+    
+    // FIX: Create chat with JWT token
+    try {
+      const communicationServiceUrl = process.env.COMMUNICATION_SERVICE_URL || 'http://communication-service:8084';
+      
+      // Create a proper service token
+      const serviceToken = createServiceToken('doctor-service', ['create:chat']);
+      
+      await axios.post(
+        `${communicationServiceUrl}/api/internal/chats`,
+        {
+          participant1Id: doctor.userId,
+          participant2Id: relationship.patientId
+        },
+        {
+          headers: { 
+            'Authorization': `Bearer ${serviceToken}`
+          }
+        }
+      );
+    } catch (chatErr) {
+      console.error('Error creating chat for relationship:', chatErr.message);
+      // Don't fail the whole request if chat creation fails
+    }
     
     res.json({ relationship });
   } catch (err) {
@@ -254,31 +290,33 @@ exports.terminateRelationship = async (req, res) => {
 exports.getDoctorRelationships = async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // First, find the Doctor record associated with this user
     const doctor = await Doctor.findOne({ where: { userId } });
     if (!doctor) {
-      return res.status(404).json({ 
-        error: 'Doctor profile not found. Please complete your doctor registration.' 
+      return res.status(404).json({
+        error: 'Doctor profile not found. Please complete your doctor registration.'
       });
     }
-    
-    // Now use the actual DOCTOR ID to find relationships
+
     const relationships = await DoctorPatientRelationship.findAll({
       where: { 
         doctorId: doctor.id,
-        status: { [Op.notIn]: ['rejected'] }
+        status: { [Op.notIn]: ['rejected'] } 
       }
     });
 
-    // Enrich with patient details through the user service API
     const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    
+    // FIX: Use JWT token for service-to-service communication
+    const serviceToken = createServiceToken('doctor-service', ['read:user:public']);
+    
     const enrichedRelationships = await Promise.all(relationships.map(async (relationship) => {
       try {
         const userResp = await axios.get(
-          `${userServiceUrl}/api/users/${relationship.patientId}/public`, 
-          {
-            headers: { 'Authorization': req.headers.authorization }
+          `${userServiceUrl}/api/internal/users/${relationship.patientId}/public`,
+          { 
+            headers: { 
+              'Authorization': `Bearer ${serviceToken}`
+            }
           }
         );
         
@@ -287,15 +325,14 @@ exports.getDoctorRelationships = async (req, res) => {
           patient: userResp.data
         };
       } catch (err) {
-        console.error(`Error fetching patient ${relationship.patientId}:`, 
-          err.response?.data || err.message);
+        console.error(`Error fetching patient ${relationship.patientId}:`, err.response?.data || err.message);
         return {
           ...relationship.toJSON(),
           patient: {
             id: relationship.patientId,
             firstName: 'Unknown',
             lastName: 'Patient',
-            email: 'unknown@example.com'
+            role: 'patient'
           }
         };
       }
@@ -318,12 +355,14 @@ exports.getPatientRelationships = async (req, res) => {
     const relationships = await DoctorPatientRelationship.findAll({
       where: { 
         patientId: userId,
-        status: { [Op.notIn]: ['rejected'] }
+        status: { [Op.notIn]: ['rejected'] } 
       }
     });
-
-    // Enrich with doctor details through the user service API
+    
     const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+    // FIX: Use JWT token for service-to-service communication (aligned with getDoctorRelationships)
+    const serviceToken = createServiceToken('doctor-service', ['read:user:public']);
+    
     const enrichedRelationships = await Promise.all(relationships.map(async (relationship) => {
       try {
         // First, get the doctor profile to get the userId
@@ -332,11 +371,13 @@ exports.getPatientRelationships = async (req, res) => {
           throw new Error('Doctor profile not found');
         }
         
-        // Use the PUBLIC endpoint to get doctor user details
+        // Use the INTERNAL endpoint with service token (aligned with getDoctorRelationships)
         const userResp = await axios.get(
-          `${userServiceUrl}/api/users/${doctor.userId}/public`, 
-          {
-            headers: { 'Authorization': req.headers.authorization }
+          `${userServiceUrl}/api/internal/users/${doctor.userId}/public`,
+          { 
+            headers: { 
+              'Authorization': `Bearer ${serviceToken}`
+            }
           }
         );
         
@@ -344,21 +385,29 @@ exports.getPatientRelationships = async (req, res) => {
           ...relationship.toJSON(),
           doctor: {
             ...doctor.toJSON(),
+            // Simplified structure to match getDoctorRelationships pattern
+            firstName: userResp.data.firstName,
+            lastName: userResp.data.lastName,
+            role: userResp.data.role,
+            // Keep the full user object for consistency with getDoctorRelationships
             user: userResp.data
           }
         };
       } catch (err) {
-        console.error(`Error fetching doctor ${relationship.doctorId}:`, 
-          err.response?.data || err.message);
+        console.error(`Error fetching doctor ${relationship.doctorId}:`, err.response?.data || err.message);
         return {
           ...relationship.toJSON(),
           doctor: {
             id: relationship.doctorId,
+            // Consistent error structure with getDoctorRelationships
+            firstName: 'Unknown',
+            lastName: 'Doctor',
+            role: 'doctor',
             user: {
               id: doctor ? doctor.userId : relationship.doctorId,
               firstName: 'Unknown',
               lastName: 'Doctor',
-              email: 'unknown@example.com'
+              role: 'doctor'
             }
           }
         };
@@ -377,77 +426,29 @@ exports.getPatientRelationships = async (req, res) => {
 exports.checkRelationship = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
-    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
     
-    // First, check if userId1 is a doctor
-    let isDoctor1 = false;
-    let doctorId1 = null;
-    try {
-      const doctorResp1 = await axios.get(
-        `${userServiceUrl}/api/users/${userId1}/public`, 
-        { headers: { 'Authorization': req.headers.authorization } }
-      );
-      if (doctorResp1.data.role === 'doctor') {
-        // Find the Doctor record for this user
-        const doctor1 = await Doctor.findOne({ where: { userId: userId1 } });
-        if (doctor1) {
-          isDoctor1 = true;
-          doctorId1 = doctor1.id;
-        }
+    // Check if there's an active relationship between these users
+    const relationship = await DoctorPatientRelationship.findOne({
+      where: {
+        [Op.or]: [
+          { 
+            doctorId: userId1, 
+            patientId: userId2,
+            status: 'active'
+          },
+          { 
+            doctorId: userId2, 
+            patientId: userId1,
+            status: 'active'
+          }
+        ]
       }
-    } catch (err) {
-      console.error(`Error checking if user ${userId1} is a doctor:`, err);
-    }
-    
-    // First, check if userId2 is a doctor
-    let isDoctor2 = false;
-    let doctorId2 = null;
-    try {
-      const doctorResp2 = await axios.get(
-        `${userServiceUrl}/api/users/${userId2}/public`, 
-        { headers: { 'Authorization': req.headers.authorization } }
-      );
-      if (doctorResp2.data.role === 'doctor') {
-        // Find the Doctor record for this user
-        const doctor2 = await Doctor.findOne({ where: { userId: userId2 } });
-        if (doctor2) {
-          isDoctor2 = true;
-          doctorId2 = doctor2.id;
-        }
-      }
-    } catch (err) {
-      console.error(`Error checking if user ${userId2} is a doctor:`, err);
-    }
-    
-    // Now check for relationships based on roles
-    let relationship = null;
-    
-    // Case 1: userId1 is doctor, userId2 is patient
-    if (isDoctor1) {
-      relationship = await DoctorPatientRelationship.findOne({
-        where: {
-          doctorId: doctorId1,
-          patientId: userId2,
-          status: 'active'
-        }
-      });
-    }
-    
-    // Case 2: userId2 is doctor, userId1 is patient
-    if (!relationship && isDoctor2) {
-      relationship = await DoctorPatientRelationship.findOne({
-        where: {
-          doctorId: doctorId2,
-          patientId: userId1,
-          status: 'active'
-        }
-      });
-    }
+    });
     
     res.json({ 
       hasRelationship: !!relationship,
       relationshipType: relationship ? 'patient-doctor' : null,
-      relationshipCount: relationship ? 1 : 0
+      //relationshipCount: relationship ? 1 : 0
     });
   } catch (err) {
     console.error('Error checking relationship:', err);
@@ -455,5 +456,38 @@ exports.checkRelationship = async (req, res) => {
       error: 'Internal server error while checking relationship',
       details: err.message 
     });
+  }
+};
+
+
+exports.checkInternalRelationship = async (req, res) => {
+  try {
+    const { userId1, userId2 } = req.params;
+    
+    // Check if there's an active relationship between these users
+    const relationship = await DoctorPatientRelationship.findOne({
+      where: {
+        [Op.or]: [
+          { 
+            doctorId: userId1, 
+            patientId: userId2,
+            status: 'active'
+          },
+          { 
+            doctorId: userId2, 
+            patientId: userId1,
+            status: 'active'
+          }
+        ]
+      }
+    });
+    
+    res.json({ 
+      hasRelationship: !!relationship,
+      relationship: relationship ? relationship.toJSON() : null
+    });
+  } catch (err) {
+    console.error('Error checking relationship:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
