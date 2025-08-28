@@ -49,54 +49,105 @@ exports.cancelAppointment = async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const role = req.user.role;
     
-    const appointment = await Appointment.findByPk(appointmentId);
+    console.log('Attempting to cancel appointment:', {
+      appointmentId,
+      userId,
+      role
+    });
+    
+    // Get appointment WITH slot information
+    const appointment = await Appointment.findByPk(appointmentId, {
+      include: [{
+        model: AppointmentSlot,
+        as: 'slot',
+        required: true
+      }]
+    });
     
     if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found' });
+      console.error('Appointment not found:', appointmentId);
+      return res.status(404).json({ 
+        error: 'Appointment not found',
+        details: `No appointment found with ID ${appointmentId}`
+      });
     }
     
+    console.log('Found appointment:', {
+      id: appointment.id,
+      doctorId: appointment.doctorId,
+      patientId: appointment.patientId,
+      status: appointment.status,
+      slotId: appointment.slotId
+    });
+    
+    // FIX: Use NUMBER comparison for IDs (critical fix)
     // Check if the user has permission to cancel this appointment
     if (
-      (role === 'patient' && appointment.patientId !== Number(userId)) ||
-      (role === 'doctor' && appointment.doctorId !== Number(userId)) ||
-      (role !== 'patient' && role !== 'doctor' && role !== 'admin')
+      (role === 'patient' && Number(appointment.patientId) !== Number(userId)) ||
+      (role === 'doctor' && Number(appointment.doctorId) !== Number(userId))
     ) {
+      console.error('Permission denied:', {
+        userId,
+        role,
+        appointmentPatientId: appointment.patientId,
+        appointmentDoctorId: appointment.doctorId
+      });
+      
       return res.status(403).json({ 
-        error: 'You do not have permission to cancel this appointment' 
+        error: 'You do not have permission to cancel this appointment',
+        details: `User ${userId} (${role}) does not own this appointment`
       });
     }
     
     // Update appointment status
     await appointment.update({ status: 'cancelled' });
     
-    // Update slot availability
-    await AppointmentSlot.update(
-      { isBooked: false },
-      { where: { id: appointment.slotId } }
-    );
+    // FIX: Update slot availability (critical fix)
+    if (appointment.slotId) {
+      await AppointmentSlot.update(
+        { isBooked: false },
+        { where: { id: appointment.slotId } }
+      );
+      console.log('Updated slot availability:', appointment.slotId);
+    } else {
+      console.warn('No slotId found for appointment:', appointmentId);
+    }
+    
+    console.log('Appointment cancelled successfully:', appointmentId);
+    
+    // Return enriched appointment data
+    const doctor = await getDoctorWithUserDetails(appointment.doctorId, req);
+    const patient = await getUserDetails(appointment.patientId, req);
     
     res.json({ 
       message: 'Appointment cancelled successfully',
-      appointment: appointment.toJSON()
+      appointment: {
+        ...appointment.toJSON(),
+        doctor: {
+          id: doctor.id,
+          userId: doctor.userId,
+          firstName: doctor.firstName,
+          lastName: doctor.lastName,
+          specialty: doctor.specialty
+        },
+        patient: {
+          id: patient.id,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          email: patient.email
+        }
+      }
     });
   } catch (err) {
     console.error('Error cancelling appointment:', err);
     res.status(500).json({ 
       error: 'Failed to cancel appointment',
-      details: err.message
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 };
 
-
-// Helper function to get the actual user ID from request
-const getActualUserId = (req) => {
-  // Try multiple possible locations for the user ID
-  return req.user?.userId || 
-         req.user?.id || 
-         req.user?.user?.id || 
-         req.user?.user?.userId;
-};
 
 // Create a helper function to fetch user details
 const fetchUserDetails = async (userId, req) => {

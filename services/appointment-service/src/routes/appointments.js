@@ -28,6 +28,9 @@ router.get(
   controller.getDoctorSlots
 );
 
+// Cancellation route
+router.put('/:appointmentId/cancel', authenticateToken, authorizeRole(['patient', 'doctor']), controller.cancelAppointment);
+
 router.get('/relationship/:userId1/:userId2', authenticateToken, async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;

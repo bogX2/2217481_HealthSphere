@@ -12,20 +12,6 @@ const AppointmentList = () => {
   const token = localStorage.getItem('token');
   const backendURL = 'http://localhost:8083/api/appointments';
   
-  // Extract the ACTUAL user ID from the token (this is the critical fix)
-  const getActualUserId = () => {
-    if (!token) return null;
-    
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      // The token uses 'userId', NOT 'id' - this is what the backend should be using
-      return payload.userId;
-    } catch (e) {
-      console.error('Error parsing token:', e);
-      return null;
-    }
-  };
-  
   // Fetch user profile to determine role
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -134,8 +120,14 @@ const AppointmentList = () => {
     }
     
     try {
-      await axios.put(
-        `${backendURL}/cancel/${appointmentId}`,
+      console.log('Attempting to cancel appointment:', {
+        appointmentId,
+        userId: user?.id,
+        role: user?.role
+      });
+      
+      const response = await axios.put(
+        `${backendURL}/${appointmentId}/cancel`,
         {},
         { 
           headers: { 
@@ -144,26 +136,64 @@ const AppointmentList = () => {
         }
       );
       
-      // Refresh appointments list
-      const userId = getActualUserId();
-      const response = user.role === 'doctor'
-        ? await axios.get(`${backendURL}/doctor/${userId}`, {
+      console.log('Cancellation successful:', response.data);
+      
+      // FIX: Use user.id directly with fallback to token ID
+      let userId = user?.id;
+      
+      // Fallback: Try to get user ID from token if not in user object
+      if (!userId) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.id;
+          console.log('Retrieved user ID from token:', userId);
+        } catch (e) {
+          console.error('Error parsing token:', e);
+          throw new Error('User authentication lost. Please log in again.');
+        }
+      }
+      
+      console.log('Refreshing appointments for user:', userId);
+      
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+      
+      // FIX: Always use Number(userId) for consistency
+      const numericUserId = Number(userId);
+      
+      const response2 = user.role === 'doctor'
+        ? await axios.get(`${backendURL}/doctor/${numericUserId}`, {
             headers: { Authorization: `Bearer ${token}` }
           })
-        : await axios.get(`${backendURL}/patient/${userId}`, {
+        : await axios.get(`${backendURL}/patient/${numericUserId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
       
-      setAppointments(response.data.appointments || []);
+      console.log('Refreshed appointments:', {
+        count: response2.data.appointments?.length,
+        appointments: response2.data.appointments
+      });
+      
+      setAppointments(response2.data.appointments || []);
       alert('Appointment cancelled successfully!');
     } catch (err) {
-      console.error('Error cancelling appointment:', err);
+      console.error('Error cancelling appointment:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+        url: `${backendURL}/${appointmentId}/cancel`
+      });
       
-      // Improved error message
       let errorMessage = 'Failed to cancel appointment.';
       if (err.response?.data?.error) {
         errorMessage += ` ${err.response.data.error}`;
+      } else if (err.response?.status === 403) {
+        errorMessage += ' You do not have permission to cancel this appointment.';
+      } else if (err.response?.status === 404) {
+        errorMessage += ' Appointment not found.';
       }
+      
       alert(errorMessage);
     }
   };
