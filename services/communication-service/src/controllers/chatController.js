@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8081';
 
-//
+/* //
 // services/communication-service/src/controllers/chatController.js
 async function validateUserRelationship(userId1, userId2) {
   try {
@@ -59,7 +59,7 @@ async function validateUserExists(userId) {
         // Let's assume validation fails on error for safety
         return false;
     }
-}
+} */
 
 
 // Create a chat (e.g., when doctor/patient first connect)

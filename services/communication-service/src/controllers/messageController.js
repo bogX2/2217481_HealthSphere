@@ -24,7 +24,19 @@ const initializeSocket = (server) => {
     try {
       // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET); // Use same secret as user-service
-      socket.userId = decoded.userId;
+
+      const userId = decoded.userId || decoded.id;
+
+      // Convert to integer and validate
+      const numericUserId = parseInt(userId, 10);
+      if (isNaN(numericUserId)) {
+        console.error('Invalid user ID format in token:', userId);
+        return next(new Error('Invalid user ID format'));
+      }
+      
+      // Store the integer ID in socket.userId
+      socket.userId = numericUserId;
+
       // Store user role if needed (requires calling user-service or having it in token)
       // const user = await getUserById(decoded.userId); // Implement this helper
       // socket.userRole = user?.role;
