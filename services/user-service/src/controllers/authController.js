@@ -52,8 +52,8 @@ exports.register = async (req, res) => {
       try {
         const doctorServiceUrl =
           process.env.NODE_ENV === 'development'
-            ? 'http://localhost:8082/internal/doctors'
-            : 'http://doctor-service:8082/internal/doctors';
+            ? 'http://localhost:8082/api/internal/doctors'
+            : 'http://doctor-service:8082/api/internal/doctors';
 
         // Create a service token using the dedicated internal secret
         const serviceToken = jwt.sign(
