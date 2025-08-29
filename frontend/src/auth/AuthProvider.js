@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { connectSocket } from '../utils/socket';
 
 const AuthContext = createContext(null);
 
@@ -22,6 +23,10 @@ export const AuthProvider = ({ children }) => {
             }
           });
           setCurrentUser(response.data.user);
+
+          // Connect socket with the token
+          connectSocket(token);
+
         } catch (error) {
           console.error('Error initializing auth:', error);
           // If token is invalid, clear it

@@ -19,6 +19,7 @@ const ChatWindow = ({ chat }) => {
   const messagesEndRef = useRef(null);
   const { currentUser } = useAuth(); // Moved out of handleSendMessage
 
+
   useEffect(() => {
     const socket = getSocket();
     if (!socket) {
@@ -35,6 +36,7 @@ const ChatWindow = ({ chat }) => {
       leaveChatRoom(chat.id);
     };
   }, [chat.id]);
+
 
   // Fetch chat history when component mounts
   useEffect(() => {
@@ -88,10 +90,12 @@ const ChatWindow = ({ chat }) => {
     };
   }, [chat.id, chat]);
 
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
 
   const handleSendMessage = (content) => {
     // Now currentUser is available from the outer scope
@@ -132,9 +136,11 @@ const ChatWindow = ({ chat }) => {
     }
   };
 
+
   if (loadingHistory) return <div className="chat-window">Loading messages...</div>;
   if (error) return <div className="chat-window error">{error}</div>;
 
+  
   return (
     <div className="chat-window">
       <div className="chat-header">

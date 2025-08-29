@@ -115,6 +115,7 @@ const ChatContainer = () => {
           <ChatList
             chats={chats}
             onSelectChat={handleChatSelect}
+            activeChatId={selectedChat?.id}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             loading={loading}
