@@ -97,10 +97,8 @@ const ChatContainer = () => {
     <div className="chat-container">
       <div className="chat-sidebar">
         <div className="chat-header">
-          <h2>Messages</h2>
-          <button className="new-chat-button" onClick={handleStartNewChat}>
-            + New Chat
-          </button>
+          <h2>Chats</h2>
+          
         </div>
         
         {error && <div className="error-banner">{error}</div>}

@@ -144,7 +144,7 @@ const ChatWindow = ({ chat }) => {
   return (
     <div className="chat-window">
       <div className="chat-header">
-        <h3>Chat with {/* Participant Names */}</h3>
+        <h3></h3>
       </div>
       <div className="chat-messages">
         <MessageList messages={messages} currentUserId={currentUser?.id} />
