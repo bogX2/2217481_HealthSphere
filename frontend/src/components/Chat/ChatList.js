@@ -1,9 +1,8 @@
-// frontend\src\components\Chat\ChatList.js
 import React from 'react';
 import ChatListItem from './ChatListItem';
 import './ChatList.css';
 
-const ChatList = ({ chats, onSelectChat, activeChatId }) => {
+const ChatList = ({ chats, onSelectChat, activeChatId, currentUser }) => {
   return (
     <div className="chat-list">
       {chats.length > 0 ? (
@@ -13,6 +12,7 @@ const ChatList = ({ chats, onSelectChat, activeChatId }) => {
             chat={chat}
             isActive={chat.id === activeChatId}
             onClick={() => onSelectChat(chat)}
+            currentUser={currentUser} // ✅ Passaggio a ChatListItem
           />
         ))
       ) : (

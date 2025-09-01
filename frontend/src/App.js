@@ -29,7 +29,10 @@ function App() {
             element={<Profile key={localStorage.getItem('token') || 'guest'} />}
           />
           <Route path="/infomanagement" element={<InfoManagement />} />
-          <Route path="/chat" element={<ChatContainer />} />
+          <Route
+            path="/chat"
+            element={<ChatContainer key={localStorage.getItem('token') || 'guest'} />}
+          />
 
           <Route path="/doctors/search" element={<DoctorSearch />} />
           <Route path="/collaborations/pending" element={<PendingRequests />} />

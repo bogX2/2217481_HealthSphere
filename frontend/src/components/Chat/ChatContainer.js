@@ -1,13 +1,13 @@
-// frontend/src/components/Chat/ChatContainer.js
-import React, { useState, useEffect, useContext } from 'react';
-import { useAuth } from '../../auth/AuthProvider';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import ChatSearch from './ChatSearch';
 import './ChatContainer.css';
 
 const ChatContainer = () => {
-  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [shouldStartNewChat, setShouldStartNewChat] = useState(false);
@@ -15,97 +15,95 @@ const ChatContainer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchUserChats();
+  // Carica l'utente e le chat
+  const loadChats = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setCurrentUser(null);
+      setChats([]);
+      setSelectedChat(null);
+      return;
     }
-  }, [currentUser]);
 
-  const fetchUserChats = async () => {
-    if (!currentUser) return;
-    
     try {
       setLoading(true);
       setError('');
-      
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/communication/user`, 
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user chats: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setChats(data.chats || []);
-      
-      // If there are chats but none selected, select the first one
-      if (data.chats && data.chats.length > 0 && !selectedChat) {
-        setSelectedChat(data.chats[0]);
-      }
+
+      // Carica profilo utente
+      const userRes = await fetch('http://localhost:8081/api/users/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!userRes.ok) throw new Error('Failed to fetch user profile');
+      const userData = await userRes.json();
+      setCurrentUser(userData.user);
+
+      // Carica chat dell'utente
+      const chatRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/communication/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!chatRes.ok) throw new Error('Failed to fetch user chats');
+      const chatData = await chatRes.json();
+
+      setChats(chatData.chats || []);
+      setSelectedChat(chatData.chats?.[0] || null);
     } catch (err) {
-      console.error('Error fetching user chats:', err);
+      console.error(err);
       setError('Failed to load your chats. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadChats();
+    window.addEventListener('authChanged', loadChats);
+    return () => window.removeEventListener('authChanged', loadChats);
+  }, []);
+
   const handleChatSelect = (chat) => {
     setSelectedChat(chat);
     setShouldStartNewChat(false);
   };
 
-  const handleStartNewChat = () => {
-    setShouldStartNewChat(true);
-  };
-
+  const handleStartNewChat = () => setShouldStartNewChat(true);
   const handleBackToList = () => {
     setSelectedChat(null);
     setShouldStartNewChat(false);
   };
 
   const handleChatCreated = (chat) => {
-    // Add the new chat to the list
-    setChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]);
+    setChats((prev) => [chat, ...prev.filter((c) => c.id !== chat.id)]);
     setSelectedChat(chat);
     setShouldStartNewChat(false);
   };
 
   if (!currentUser) {
     return (
-      <div className="chat-container">
-        <div className="chat-placeholder">
-          <p>Please log in to access your chats</p>
-          <button onClick={() => window.location.href = '/login'}>
-            Go to Login
-          </button>
-        </div>
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <p className="text-secondary">Please log in to access your chats</p>
+        <button className="btn btn-primary ms-3" onClick={() => navigate('/login')}>
+          Go to Login
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="chat-container">
-      <div className="chat-sidebar">
-        <div className="chat-header">
+    <div className="chat-container d-flex vh-100">
+      <div style={{ position: 'absolute', top: 0, right: 0, padding: '8px', backgroundColor: '#f0f0f0', zIndex: 10 }}>
+        Ciao {currentUser.profile?.firstName || currentUser.firstName}
+      </div>
+
+      <div className="chat-sidebar border-end p-3">
+        <div className="chat-header mb-3">
           <h2>Chats</h2>
-          
         </div>
-        
-        {error && <div className="error-banner">{error}</div>}
-        
+
+        {error && <div className="alert alert-danger">{error}</div>}
+
         {shouldStartNewChat ? (
-          <ChatSearch 
-            currentUser={currentUser} 
+          <ChatSearch
+            currentUser={currentUser}
             onChatSelected={handleChatCreated}
             onBack={handleBackToList}
           />
@@ -117,21 +115,22 @@ const ChatContainer = () => {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             loading={loading}
+            currentUser={currentUser} // ✅ Passaggio a ChatList
           />
         )}
       </div>
-      
-      <div className="chat-main">
+
+      <div className="chat-main flex-grow-1 p-3">
         {selectedChat ? (
-          <ChatWindow 
-            chat={selectedChat} 
+          <ChatWindow
+            chat={selectedChat}
             onBack={handleBackToList}
             currentUser={currentUser}
           />
         ) : !shouldStartNewChat ? (
-          <div className="chat-placeholder">
+          <div className="chat-placeholder text-center mt-5">
             <h3>Select a chat or start a new conversation</h3>
-            <button className="primary-button" onClick={handleStartNewChat}>
+            <button className="btn btn-success mt-3" onClick={handleStartNewChat}>
               Start New Chat
             </button>
           </div>

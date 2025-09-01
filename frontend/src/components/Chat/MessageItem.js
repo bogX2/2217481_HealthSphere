@@ -3,6 +3,14 @@ import React from 'react';
 import './MessageItem.css';
 
 const MessageItem = ({ message, isOwnMessage }) => {
+console.log(
+    "MessageItem → senderId:", message.senderId,
+    "isOwnMessage:", isOwnMessage,
+    "content:", message.content
+  );
+
+
+
   // Format timestamp
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
