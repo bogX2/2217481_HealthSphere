@@ -15,6 +15,8 @@ const {
 } = require('../controllers/doctorController');
 const relationshipController = require('../controllers/relationshipController');
 
+
+
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 //const { serviceAuth } = require('../middleware/serviceAuth');
 

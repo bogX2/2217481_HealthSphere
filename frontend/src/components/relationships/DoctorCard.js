@@ -1,28 +1,36 @@
 // src/components/relationships/DoctorCard.js
 import React from 'react';
 
-const DoctorCard = ({ doctor, onActionClick, actionLabel = "Request Collaboration" }) => {
+const DoctorCard = ({ doctor, onActionClick, actionLabel, onViewProfile }) => {
   return (
-    <div className="doctor-card card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-      <div className="card-body p-4 d-flex flex-column">
-        <div className="text-center mb-3">
-          <h3 className="card-title mb-2 fw-bold" style={{ fontSize: "1.5rem" }}>
-            {doctor.firstName} {doctor.lastName}
-          </h3>
-          <p className="text-primary mb-0" style={{ fontSize: "1.1rem" }}>
-            {doctor.specialty}
-          </p>
+    <div className="card h-100 shadow-sm text-center border-0 option-card">
+      <div className="card-body d-flex flex-column">
+        {/* Immagine del profilo (placeholder) */}
+        <div className="mb-3">
+          <i className="bi bi-person-circle" style={{ fontSize: '4rem', color: '#2a9d8f' }}></i>
         </div>
-        
-        <div className="mt-auto">
-          <button 
-            className="btn btn-primary w-100 py-2 fw-medium rounded-2"
-            style={{ fontSize: "1.05rem", padding: "0.6rem 0" }}
-            onClick={onActionClick}
-          >
-            {actionLabel}
-          </button>
-        </div>
+
+        <h5 className="card-title fw-bold text-primary">{doctor.name}</h5>
+        <h6 className="card-subtitle mb-2 text-muted">{doctor.specialty}</h6>
+        <p className="card-text small text-secondary mt-2">
+          {doctor.location || 'Location not specified'}
+        </p>
+
+        {/* Pulsante View Profile */}
+        <button
+          onClick={onViewProfile}
+          className="btn btn-outline-primary w-100 mb-2 fw-semibold"
+        >
+          View Profile
+        </button>
+
+        {/* Pulsante principale (es. Collaborazione) */}
+        <button
+          onClick={onActionClick}
+          className="btn btn-success w-100 fw-bold"
+        >
+          {actionLabel}
+        </button>
       </div>
     </div>
   );

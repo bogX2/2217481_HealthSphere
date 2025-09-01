@@ -149,12 +149,15 @@ const BookAppointment = () => {
 
         {error && <div className="alert alert-danger" role="alert">{error}</div>}
 
-        {doctor && (
-            <div className="text-center mb-4">
-                <h4 className="fw-bold">Doctor: {doctor.firstName} {doctor.lastName}</h4>
-                <p className="text-muted">{doctor.doctor?.specialty}</p>
-            </div>
-        )}
+        // Dopo (Corretto)
+{doctor && (
+    <div className="text-center mb-4">
+        {/* Usiamo doctor.user per nome e cognome */}
+        <h4 className="fw-bold">Doctor: {doctor.user?.firstName} {doctor.user?.lastName}</h4>
+        {/* Usiamo doctor.specialty direttamente per la specializzazione */}
+        <p className="text-muted">{doctor.specialty}</p>
+    </div>
+)}
 
         {slots.length === 0 ? (
           <div className="alert alert-info text-center" role="alert">
