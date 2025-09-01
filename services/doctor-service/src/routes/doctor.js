@@ -15,15 +15,7 @@ const {
 } = require('../controllers/doctorController');
 const relationshipController = require('../controllers/relationshipController');
 
-const { createReview, getDoctorReviews } = require('../controllers/reviewsController');
-// Non serve importare di nuovo authMiddleware, usi quello che hai già
 
-// Rotta per creare una recensione (protetta da autenticazione)
-router.post('/:id/reviews', authenticateToken, createReview);
-
-// Rotta per ottenere le recensioni di un dottore (pubblica)
-router.get('/:id/reviews', getDoctorReviews);
-// ... altre rotte ...
 
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 //const { serviceAuth } = require('../middleware/serviceAuth');
