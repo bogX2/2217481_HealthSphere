@@ -3,7 +3,7 @@ import { Container, Card, Button, Alert, Spinner, Badge, Collapse, Row, Col } fr
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/layout/Header';
-import LeaveReviewForm from '../LeaveReviewForm';
+
 
 // Importa le icone che useremo
 import { CalendarEvent, FileText, Person } from 'react-bootstrap-icons';
@@ -58,18 +58,18 @@ const AppointmentList = () => {
         };
         fetchUserProfile();
     }, [token, navigate]);
-    
+
     // Fetch appointments based on user role
     useEffect(() => {
         if (!user) return;
-        
+
         const fetchAppointments = async () => {
             setLoading(true);
             setError('');
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 const userId = payload.id;
-                
+
                 let endpoint = user.role === 'doctor'
                     ? `${backendURL}/doctor/${userId}`
                     : `${backendURL}/patient/${userId}`;
@@ -78,10 +78,10 @@ const AppointmentList = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                const sortedAppointments = (response.data.appointments || []).sort((a, b) => 
+                const sortedAppointments = (response.data.appointments || []).sort((a, b) =>
                     new Date(b.slot.date || b.slot.slot.date) - new Date(a.slot.date || a.slot.slot.date)
                 );
-                
+
                 setAppointments(sortedAppointments);
             } catch (err) {
                 console.error('Error fetching appointments:', err);
@@ -90,10 +90,10 @@ const AppointmentList = () => {
                 setLoading(false);
             }
         };
-        
+
         fetchAppointments();
     }, [user, token]);
- 
+
     // Format date and time for display
     const formatAppointmentDateTime = (slot) => {
         if (!slot) return 'Invalid date/time';
@@ -104,7 +104,7 @@ const AppointmentList = () => {
             return 'Invalid date/time';
         }
     };
-    
+
     // Get status badge variant
     const getStatusVariant = (status) => {
         switch (status) {
@@ -114,16 +114,16 @@ const AppointmentList = () => {
             default: return 'secondary';
         }
     };
-    
+
     // Handle canceling an appointment
     const handleCancel = async (appointmentId) => {
         if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
-        
+
         try {
-            await axios.put(`${backendURL}/${appointmentId}/cancel`, {}, { 
+            await axios.put(`${backendURL}/${appointmentId}/cancel`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setAppointments(prev => prev.map(app => 
+            setAppointments(prev => prev.map(app =>
                 app.id === appointmentId ? { ...app, status: 'cancelled' } : app
             ));
             alert('Appointment cancelled successfully!');
@@ -132,7 +132,7 @@ const AppointmentList = () => {
             alert(err.response?.data?.error || 'Failed to cancel appointment.');
         }
     };
-    
+
     // Render appointments
     const renderAppointments = () => {
         if (loading) {
@@ -143,11 +143,11 @@ const AppointmentList = () => {
                 </div>
             );
         }
-        
+
         if (error) {
             return <Alert variant="danger" className="col-lg-8 mx-auto">{error}</Alert>;
         }
-        
+
         if (appointments.length === 0) {
             return (
                 <Alert variant="info" className="col-lg-8 mx-auto text-center">
@@ -155,7 +155,7 @@ const AppointmentList = () => {
                 </Alert>
             );
         }
-        
+
         return (
             <Row xs={1} lg={2} className="g-4">
                 {appointments.map(appointment => (
@@ -165,7 +165,7 @@ const AppointmentList = () => {
                                 <div className="d-flex align-items-center">
                                     <Person size={24} className="me-2 text-success" />
                                     <h5 className="mb-0 fs-6 fw-bold">
-                                        {user?.role === 'doctor' 
+                                        {user?.role === 'doctor'
                                             ? `${appointment.patient?.firstName || ''} ${appointment.patient?.lastName || ''}`
                                             : `Dr. ${appointment.doctor?.firstName || ''} ${appointment.doctor?.lastName || ''}`}
                                     </h5>
@@ -186,7 +186,7 @@ const AppointmentList = () => {
                                         Cancel
                                     </Button>
                                 )}
-                                
+
                                 {user?.role === 'patient' && appointment.status === 'completed' && isPastAppointment(appointment.slot) && (
                                     <Button variant="outline-success" size="sm" onClick={() => setReviewFormId(reviewFormId === appointment.id ? null : appointment.id)}>
                                         {reviewFormId === appointment.id ? 'Close Review' : 'Leave a Review'}
@@ -201,16 +201,7 @@ const AppointmentList = () => {
                         <Collapse in={reviewFormId === appointment.id}>
                             <div>
                                 <Card className="mt-2 border-success">
-                                    <Card.Body>
-                                        <LeaveReviewForm
-                                            doctorId={appointment.doctor.userId} 
-                                            appointmentId={appointment.id}
-                                            onReviewSubmit={() => {
-                                                alert('Thank you for your review!');
-                                                setReviewFormId(null);
-                                            }}
-                                        />
-                                    </Card.Body>
+
                                 </Card>
                             </div>
                         </Collapse>
@@ -219,7 +210,7 @@ const AppointmentList = () => {
             </Row>
         );
     };
-    
+
     return (
         <div className="d-flex flex-column bg-light min-vh-100">
             <Header user={user} />
@@ -230,12 +221,12 @@ const AppointmentList = () => {
                         {user?.role === 'doctor' ? 'My Appointments' : 'My Booked Appointments'}
                     </h2>
                     <p className="lead text-muted">
-                        {user?.role === 'doctor' 
-                            ? 'View and manage your scheduled appointments' 
+                        {user?.role === 'doctor'
+                            ? 'View and manage your scheduled appointments'
                             : 'View your upcoming and past appointments'}
                     </p>
                 </section>
-                
+
                 {renderAppointments()}
             </Container>
         </div>
