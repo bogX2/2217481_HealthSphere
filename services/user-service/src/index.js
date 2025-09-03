@@ -5,6 +5,7 @@ const sequelize = require('./config/database');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const internalRoutes = require('./routes/internal');
+const patientRoutes = require('./routes/patientRoutes');
 
 const app = express();
 
@@ -15,6 +16,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+
+
 
 const PORT = process.env.PORT || 8081;
 
@@ -50,6 +54,7 @@ async function connectWithRetry() {
     app.use('/api/internal', internalRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
+    app.use('/api/patients', patientRoutes);
 
     // Health check
     app.get('/health', (req, res) => {

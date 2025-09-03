@@ -70,6 +70,15 @@ app.use('/api/users', createProxyMiddleware({
   }
 }));
 
+// Aggiungi questa nuova regola per le rotte dei pazienti
+app.use('/api/patients', createProxyMiddleware({
+  target: services.user,
+  ...proxyOptions,
+  pathRewrite: {
+    '^/api/patients': '/api/patients'
+  }
+}));
+
 // DOCTOR SERVICE routes
 app.use('/api/doctors', createProxyMiddleware({
   target: services.doctor,

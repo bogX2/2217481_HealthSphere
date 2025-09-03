@@ -13,6 +13,18 @@ const PatientProfile = sequelize.define('PatientProfile', {
   dataNascita: DataTypes.DATEONLY,
   luogoNascita: DataTypes.STRING,
   codiceFiscale: DataTypes.STRING,
-}, { timestamps: false });
+
+  // 🔹 Nuovi campi
+  medicalHistory: {
+    type: DataTypes.TEXT, // TEXT perché può essere lungo
+    allowNull: true,
+  },
+  insuranceDetails: {
+    type: DataTypes.STRING, // stringa semplice (es. nome assicurazione, polizza, ecc.)
+    allowNull: true,
+  },
+}, { 
+  timestamps: false 
+});
 
 module.exports = PatientProfile;

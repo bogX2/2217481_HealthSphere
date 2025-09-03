@@ -6,6 +6,8 @@ import Dropdown from './Dropdown'; // Importa il componente Dropdown
 const InfoManagement = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+
+  // 🔹 Stato per il dottore
   const [doctorData, setDoctorData] = useState({
     specialty: "",
     bio: "",
@@ -15,6 +17,13 @@ const InfoManagement = () => {
     experienceYears: "",
     credentials: { licenseNumber: "", issuedBy: "" },
   });
+
+  // 🔹 Stato per il paziente
+  const [patientData, setPatientData] = useState({
+    medicalHistory: "",
+    insuranceDetails: ""
+  });
+
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [documentFile, setDocumentFile] = useState(null);
 
@@ -22,7 +31,7 @@ const InfoManagement = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      navigate('/login'); // Reindirizza al login se non c'è il token
+      navigate('/login');
       return;
     }
 
@@ -32,10 +41,18 @@ const InfoManagement = () => {
       })
       .then((res) => {
         setUser(res.data.user);
+
         if (res.data.user.role === 'doctor' && res.data.user.doctor) {
           setDoctorData({
             ...res.data.user.doctor,
             credentials: res.data.user.doctor.credentials[0] || { licenseNumber: '', issuedBy: '' }
+          });
+        }
+
+        if (res.data.user.role === 'patient' && res.data.user.patient) {
+          setPatientData({
+            medicalHistory: res.data.user.patient.medicalHistory || "",
+            insuranceDetails: res.data.user.patient.insuranceDetails || ""
           });
         }
       })
@@ -44,7 +61,7 @@ const InfoManagement = () => {
         localStorage.removeItem('token');
         navigate('/login');
       });
-  }, [navigate]); // Aggiungi navigate come dipendenza per l'effetto
+  }, [navigate]);
 
   if (!user) {
     return (
@@ -56,14 +73,14 @@ const InfoManagement = () => {
     );
   }
 
-  //  Funzione di Logout
+  // 🔹 Funzione di Logout
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.dispatchEvent(new Event('authChanged')); // Per notificare altri componenti
+    window.dispatchEvent(new Event('authChanged'));
     navigate('/');
   };
 
-  //  Save/Update doctor profile
+  // 🔹 Save/Update doctor profile
   const handleDoctorSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -77,8 +94,8 @@ const InfoManagement = () => {
         ...doctorData,
         credentials: [doctorData.credentials],
         languages: doctorData.languages
-    ? doctorData.languages.split(",").map(lang => lang.trim())
-    : [],
+          ? doctorData.languages.split(",").map(lang => lang.trim())
+          : [],
       };
 
       await axios[method](url, payload, {
@@ -96,7 +113,36 @@ const InfoManagement = () => {
     }
   };
 
-  // 🔹 2. Upload profile photo
+  // 🔹 Save/Update patient profile
+  const handlePatientSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const isUpdate = !!user.patientProfile;
+      const url = isUpdate ? `http://localhost:8081/api/patients/${user.id}` : "http://localhost:8081/api/patients";
+      const method = isUpdate ? "put" : "post";
+
+      const payload = {
+        userId: user.id,
+        ...patientData,
+      };
+
+      await axios[method](url, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert(`Patient profile ${isUpdate ? 'updated' : 'created'} successfully!`);
+      axios.get("http://localhost:8081/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(res => setUser(res.data.user));
+
+    } catch (err) {
+      console.error("Error saving patient data:", err.response?.data || err);
+      alert("Error saving patient data");
+    }
+  };
+
+  // 🔹 Upload profile photo
   const handlePhotoSubmit = async (e) => {
     e.preventDefault();
     if (!profilePhoto) return alert("Please select a profile photo.");
@@ -119,7 +165,7 @@ const InfoManagement = () => {
     }
   };
 
-  // 🔹 3. Upload documents
+  // 🔹 Upload documents
   const handleDocumentSubmit = async (e) => {
     e.preventDefault();
     if (!documentFile) return alert("Please select a file.");
@@ -146,7 +192,7 @@ const InfoManagement = () => {
   return (
     <div className="d-flex flex-column align-items-center vh-100 overflow-y-auto" style={{ backgroundColor: "#e8f7f5", paddingTop: '120px' }}>
       {/* 🔹 Header con il Dropdown Menu */}
-      <header className="position-fixed top-0 start-0 w-100 p-4  mb-4 d-flex justify-content-between align-items-center z-1" style={{ userSelect: 'none', backgroundColor: '#e8f7f5' }}>
+      <header className="position-fixed top-0 start-0 w-100 p-4 mb-4 d-flex justify-content-between align-items-center z-1" style={{ userSelect: 'none', backgroundColor: '#e8f7f5' }}>
         <div className="d-flex align-items-center">
           <img src="/logo192.png" alt="HealthSphere Logo" className="rounded-circle me-3" style={{ width: '60px', height: '60px', border: '3px solid #2a9d8f' }} />
           <h1 className="h4 fw-bold text-dark mb-0 d-none d-sm-block">HealthSphere</h1>
@@ -154,13 +200,13 @@ const InfoManagement = () => {
         <Dropdown onLogout={handleLogout} />
       </header>
 
-      {/* Il resto del contenuto della pagina */}
-      <div className={`card shadow-lg p-4 p-md-5 rounded-4 mb-5`} style={{ maxWidth: '800px', width: '100%', borderColor: 'transparent', backgroundColor: '#ffffff' }}>
+      {/* Contenuto della pagina */}
+      <div className="card shadow-lg p-4 p-md-5 rounded-4 mb-5" style={{ maxWidth: '800px', width: '100%', borderColor: 'transparent', backgroundColor: '#ffffff' }}>
         <h2 className="text-center mb-4 h3 fw-bold">
           Update Personal Information ({user.role === "doctor" ? "Doctor" : "Patient"})
         </h2>
 
-        {/* PATIENT - Form in a card */}
+        {/* PATIENT - Form */}
         {user.role === "patient" && (
           <div className="card shadow-sm mb-4">
             <div className="card-body">
@@ -168,14 +214,25 @@ const InfoManagement = () => {
               <p className="card-text text-muted mb-4">
                 Please fill in the fields below to create or update your personal data.
               </p>
-              <form>
+              <form onSubmit={handlePatientSubmit}>
                 <div className="mb-3">
                   <label htmlFor="medicalHistory" className="form-label fw-bold">Medical History</label>
-                  <textarea id="medicalHistory" className="form-control rounded-4"></textarea>
+                  <textarea
+                    id="medicalHistory"
+                    value={patientData.medicalHistory}
+                    onChange={(e) => setPatientData({ ...patientData, medicalHistory: e.target.value })}
+                    className="form-control rounded-4"
+                  ></textarea>
                 </div>
                 <div className="mb-3">
                   <label htmlFor="insuranceDetails" className="form-label fw-bold">Insurance Details</label>
-                  <input type="text" id="insuranceDetails" className="form-control rounded-pill" />
+                  <input
+                    type="text"
+                    id="insuranceDetails"
+                    value={patientData.insuranceDetails}
+                    onChange={(e) => setPatientData({ ...patientData, insuranceDetails: e.target.value })}
+                    className="form-control rounded-pill"
+                  />
                 </div>
                 <div className="d-grid mt-4">
                   <button type="submit" className="btn btn-primary btn-lg rounded-pill" style={{ backgroundColor: '#2a9d8f', borderColor: '#2a9d8f' }}>Save</button>
@@ -185,7 +242,7 @@ const InfoManagement = () => {
           </div>
         )}
 
-        {/* DOCTOR - Sections separated in cards */}
+        {/* DOCTOR - Sezioni */}
         {user.role === "doctor" && (
           <>
             {/* 1️⃣ Doctor Profile Form */}
@@ -193,7 +250,7 @@ const InfoManagement = () => {
               <div className="card-body">
                 <h5 className="card-title fw-bold">1. Doctor Profile</h5>
                 <p className="card-text text-muted mb-4">
-                    Please fill in the fields below to create or update your professional profile.
+                  Please fill in the fields below to create or update your professional profile.
                 </p>
                 <form onSubmit={handleDoctorSubmit}>
                   <div className="row g-3">
