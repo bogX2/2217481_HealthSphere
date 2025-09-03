@@ -1,5 +1,7 @@
 // src/components/relationships/DoctorCard.js
 import React from 'react';
+import ReviewList from '../reviews/ReviewList';
+import AddReview from '../reviews/AddReview';
 
 const DoctorCard = ({ doctor, onActionClick, actionLabel, onViewProfile }) => {
   return (
@@ -15,6 +17,14 @@ const DoctorCard = ({ doctor, onActionClick, actionLabel, onViewProfile }) => {
         <p className="card-text small text-secondary mt-2">
           {doctor.location || 'Location not specified'}
         </p>
+
+        
+        {/* Sezione Recensioni */}
+            <div>
+                <ReviewList doctorId={doctor.id} />
+                <AddReview doctorId={doctor.id} />
+            </div>
+      
 
         {/* Pulsante View Profile */}
         <button

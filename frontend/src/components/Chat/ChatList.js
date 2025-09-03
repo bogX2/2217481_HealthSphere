@@ -12,7 +12,7 @@ const ChatList = ({ chats, onSelectChat, activeChatId, currentUser }) => {
             chat={chat}
             isActive={chat.id === activeChatId}
             onClick={() => onSelectChat(chat)}
-            currentUser={currentUser} // ✅ Passaggio a ChatListItem
+            currentUser={currentUser}
           />
         ))
       ) : (

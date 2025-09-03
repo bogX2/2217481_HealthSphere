@@ -92,6 +92,23 @@ services:
     depends_on:
       - postgres-db
 
+  review-service:
+    build: ./services/review-service
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthsphere
+    depends_on:
+      - postgres-db
+    volumes:
+      - ./services/review-service:/usr/src/app
+      - /usr/src/app/node_modules
+
   api-gateway:
     build: ./api-gateway
     ports:

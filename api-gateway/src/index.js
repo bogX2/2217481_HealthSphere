@@ -7,6 +7,16 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+// Aggiungi questa rotta per il review-service
+app.use('/api/reviews', createProxyMiddleware({ 
+    target: 'http://review-service:3005', 
+    changeOrigin: true,
+    pathRewrite: {
+        '^/api/reviews': '/api/reviews',
+    },
+}));
+
 // Security middleware
 app.use(helmet());
 app.use(cors({

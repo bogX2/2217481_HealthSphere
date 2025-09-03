@@ -56,14 +56,14 @@ const InfoManagement = () => {
     );
   }
 
-  // 🔹 Funzione di Logout
+  //  Funzione di Logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('authChanged')); // Per notificare altri componenti
     navigate('/');
   };
 
-  // 🔹 1. Save/Update doctor profile
+  //  Save/Update doctor profile
   const handleDoctorSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -76,6 +76,9 @@ const InfoManagement = () => {
         userId: user.id,
         ...doctorData,
         credentials: [doctorData.credentials],
+        languages: doctorData.languages
+    ? doctorData.languages.split(",").map(lang => lang.trim())
+    : [],
       };
 
       await axios[method](url, payload, {

@@ -90,9 +90,7 @@ const ChatContainer = () => {
 
   return (
     <div className="chat-container d-flex vh-100">
-      <div style={{ position: 'absolute', top: 0, right: 0, padding: '8px', backgroundColor: '#f0f0f0', zIndex: 10 }}>
-        Ciao {currentUser.profile?.firstName || currentUser.firstName}
-      </div>
+     
 
       <div className="chat-sidebar border-end p-3">
         <div className="chat-header mb-3">
@@ -115,7 +113,7 @@ const ChatContainer = () => {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             loading={loading}
-            currentUser={currentUser} // ✅ Passaggio a ChatList
+            currentUser={currentUser} 
           />
         )}
       </div>
