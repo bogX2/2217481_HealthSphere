@@ -43,8 +43,18 @@ exports.register = async (req, res) => {
     });
 
     // If patient, create patient profile
-    if (role === 'patient') {
-      await PatientProfile.create({ userId: user.id });
+   if (role === 'patient') {
+      await PatientProfile.create({
+        userId: user.id,
+        nome: user.firstName,
+        cognome: user.lastName,
+        telefono: user.phoneNumber,
+        dataNascita: user.birthDate,
+        luogoNascita: user.birthPlace,
+        codiceFiscale: user.fiscalCode,
+        // I campi 'medicalHistory' e 'insuranceDetails' rimarranno null
+        // e potranno essere compilati in seguito dall'utente.
+      });
     }
 
     // If doctor, also create doctor profile in doctor service

@@ -114,33 +114,41 @@ const InfoManagement = () => {
   };
 
   // 🔹 Save/Update patient profile
-  const handlePatientSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem("token");
-      const isUpdate = !!user.patientProfile;
-      const url = isUpdate ? `http://localhost:8081/api/patients/${user.id}` : "http://localhost:8081/api/patients";
-      const method = isUpdate ? "put" : "post";
+ const handlePatientSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("token");
 
-      const payload = {
-        userId: user.id,
-        ...patientData,
-      };
-
-      await axios[method](url, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      alert(`Patient profile ${isUpdate ? 'updated' : 'created'} successfully!`);
-      axios.get("http://localhost:8081/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => setUser(res.data.user));
-
-    } catch (err) {
-      console.error("Error saving patient data:", err.response?.data || err);
-      alert("Error saving patient data");
+    if (!user || !user.id) {
+      alert("User not loaded, please try again");
+      return;
     }
-  };
+
+    // Usi sempre PUT perché la riga in PatientProfiles esiste già
+    const url = `http://localhost:8081/api/patients/${user.id}`;
+
+    const payload = {
+      medicalHistory: patientData.medicalHistory,
+      insuranceDetails: patientData.insuranceDetails
+    };
+
+    await axios.put(url, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    alert("Patient profile updated successfully!");
+
+    // 🔄 Ricarica il profilo aggiornato
+    const res = await axios.get("http://localhost:8081/api/users/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setUser(res.data.user);
+
+  } catch (err) {
+    console.error("Error saving patient data:", err.response?.data || err);
+    alert("Error saving patient data");
+  }
+};
 
   // 🔹 Upload profile photo
   const handlePhotoSubmit = async (e) => {
