@@ -8,59 +8,6 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8081';
 
-/* //
-// services/communication-service/src/controllers/chatController.js
-async function validateUserRelationship(userId1, userId2) {
-  try {
-    // Check doctor-patient relationships
-    const doctorServiceUrl = process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:3001';
-    
-    // Create a JWT token using the INTERNAL_SERVICE_SECRET
-    const serviceToken = jwt.sign(
-      { 
-        service: 'communication-service',
-        permissions: ['check:relationship']
-      }, 
-      process.env.INTERNAL_SERVICE_SECRET,
-      { expiresIn: '5m' }
-    );
-    
-    const response = await axios.get(
-      `${doctorServiceUrl}/api/internal/relationships/check/${userId1}/${userId2}`,
-      {
-        headers: { 
-          'Authorization': `Bearer ${serviceToken}`
-        }
-      }
-    );
-    
-    return response.data.hasRelationship;
-  } catch (error) {
-    console.error('Error validating user relationship:', error.message);
-    return false;
-  }
-}
-
-async function validateUserExists(userId) {
-    try {
-        // Make internal call to user-service
-        const response = await axios.get(`${USER_SERVICE_URL}/api/users/${userId}`, {
-             // Don't pass user's token here, service-to-service call
-             // Or use service-specific auth if implemented
-        });
-        return response.status === 200;
-    } catch (error) {
-        console.error(`Error validating user ${userId}:`, error.message);
-        // If user-service returns 404, it means user doesn't exist
-        if (error.response && error.response.status === 404) {
-            return false;
-        }
-        // For other errors (network issues, 500s), you might choose to fail or assume exists
-        // Let's assume validation fails on error for safety
-        return false;
-    }
-} */
-
 
 // Create a chat (e.g., when doctor/patient first connect)
 exports.createChat = async (req, res) => {
@@ -222,7 +169,7 @@ exports.getUserChats = async (req, res) => {
       });
     }
 
-    // CRITICAL FIX: This line was MISSING in your implementation
+    // CRITICAL FIX: This line was MISSING 
     const chats = await Chat.findAll({
       where: {
         [Op.or]: [
@@ -263,6 +210,14 @@ exports.getUserChats = async (req, res) => {
             timeout: 5000
           }
         );
+
+         // CORREZIONE: il backend ora invia participant1 e participant2
+        const currentUserData = (userId === chatData.participant1Id) ? userResp.data : null;
+        const otherParticipantData = (userId === chatData.participant1Id) ? null : userResp.data;
+
+        const p1 = await axios.get(`${userServiceUrl}/api/internal/users/${chat.participant1Id}/public`, { headers: { 'Authorization': `Bearer ${serviceToken}` }});
+        const p2 = await axios.get(`${userServiceUrl}/api/internal/users/${chat.participant2Id}/public`, { headers: { 'Authorization': `Bearer ${serviceToken}` }});
+        
         
         return {
           ...chatData,

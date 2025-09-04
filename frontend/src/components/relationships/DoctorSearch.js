@@ -5,6 +5,8 @@ import { Modal, Button } from 'react-bootstrap'; // Modal da react-bootstrap
 import api from '../../services/api';
 import Header from '../layout/Header';
 import DoctorCard from './DoctorCard';
+import ReviewsCarousel from '../reviews/ReviewsCarousel';
+import AddReviewModal from '../reviews/AddReviewModal';   
 
 const DoctorSearch = () => {
   const [doctors, setDoctors] = useState([]);
@@ -15,6 +17,7 @@ const DoctorSearch = () => {
   const [user, setUser] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null); // medico selezionato
   const [showModal, setShowModal] = useState(false); // stato modal
+   const [showAddReviewModal, setShowAddReviewModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -165,24 +168,41 @@ const DoctorSearch = () => {
       </div>
 
       {/* Modal profilo medico */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedDoctor?.name}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p><strong>Specialty:</strong> {selectedDoctor?.specialty}</p>
-          <p><strong>Experience:</strong> {selectedDoctor?.experience || 'Not provided'}</p>
-          <p><strong>Availability:</strong> {selectedDoctor?.availability || 'Check calendar'}</p>
-          <p><strong>Rating:</strong> {selectedDoctor?.rating || 'No reviews yet'}</p>
-          {/* puoi aggiungere certificazioni, contatti, ecc. */}
-        </Modal.Body>
-        <Modal.Footer>
+      {/* Modale profilo medico aggiornato */}
+    <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Dr. {selectedDoctor?.firstName} {selectedDoctor?.lastName}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <h5>{selectedDoctor?.specialty}</h5>
+        <p><strong>Experience:</strong> {selectedDoctor?.experienceYears || 'N/A'} years</p>
+        <hr />
+        
+        {/* 2. QUI VISUALIZZIAMO LE RECENSIONI */}
+        <h5 className="mt-4">Patient Reviews</h5>
+        {selectedDoctor && <ReviewsCarousel doctorId={selectedDoctor.id} />}
+        
+      </Modal.Body>
+      <Modal.Footer className="justify-content-between">
+        {/* 1. QUI IL PULSANTE PER LASCIARE LA RECENSIONE */}
+        <Button variant="outline-primary" onClick={() => setShowAddReviewModal(true)}>
+          Leave a Review
+        </Button>
+        <div>
           <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-          <Button variant="success" onClick={() => handleRequestCollaboration(selectedDoctor.id)}>
+          <Button variant="success" className="ms-2" onClick={() => handleRequestCollaboration(selectedDoctor.id)}>
             Request Collaboration
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </div>
+      </Modal.Footer>
+    </Modal>
+
+    {/* Modale per aggiungere la recensione */}
+    <AddReviewModal 
+      show={showAddReviewModal} 
+      onHide={() => setShowAddReviewModal(false)}
+      doctor={selectedDoctor}
+    />
 
       <style jsx="true">{`
         .option-card {

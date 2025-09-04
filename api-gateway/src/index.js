@@ -36,7 +36,8 @@ const services = {
   user: process.env.USER_SERVICE_URL || 'http://user-service:8081',
   doctor: process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:8082',
   appointment: process.env.APPOINTMENT_SERVICE_URL || 'http://appointment-service:8083',
-  communication: process.env.COMMUNICATION_SERVICE_URL || 'http://communication-service:8084'
+  communication: process.env.COMMUNICATION_SERVICE_URL || 'http://communication-service:8084',
+  document: process.env.DOCUMENT_SERVICE_URL || 'http://document-service:8085'
 };
 
 // Proxy middleware options
@@ -101,6 +102,15 @@ app.use('/api/communication', createProxyMiddleware({
   ...proxyOptions,
   pathRewrite: {
     '^/api/communication': '/api/chats'
+  }
+}));
+
+// Rotta per il Document Service
+app.use('/api/prescriptions', createProxyMiddleware({
+  target: services.document,
+  ...proxyOptions,
+  pathRewrite: {
+    '^/api/prescriptions': '/api/prescriptions'
   }
 }));
 

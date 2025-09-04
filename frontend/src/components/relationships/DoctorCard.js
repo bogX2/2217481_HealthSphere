@@ -18,12 +18,7 @@ const DoctorCard = ({ doctor, onActionClick, actionLabel, onViewProfile }) => {
           {doctor.location || 'Location not specified'}
         </p>
 
-        
-        {/* Sezione Recensioni */}
-            <div>
-                <ReviewList doctorId={doctor.id} />
-                <AddReview doctorId={doctor.id} />
-            </div>
+      
       
 
         {/* Pulsante View Profile */}

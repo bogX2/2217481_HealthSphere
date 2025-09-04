@@ -1,81 +1,109 @@
-import React, { useState } from 'react'; // 1. Rimuovi useContext
-import reviewService from '../../services/reviewService';
-import { useAuth } from '../../auth/AuthProvider'; // 2. Importa useAuth invece di AuthContext
+import React, { useState } from 'react';
+import { useAuth } from '../../auth/AuthProvider';
+import api from '../../services/api';
 
 const AddReview = ({ doctorId, onReviewAdded }) => {
-    const { currentUser } = useAuth(); // 3. Usa l'hook useAuth() e prendi 'currentUser'
-    
-    const [rating, setRating] = useState(5);
+    const { currentUser } = useAuth();
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // --- AGGIUNGI QUESTO CONTROLLO DI SICUREZZA ---
+    if (!currentUser) {
+        setError('Unable to verify user. Please refresh and try again.');
+        return; // Interrompe l'esecuzione se currentUser è null
+    }
+        if (rating === 0) {
+            setError('Please select a rating by clicking the stars.');
+            return;
+        }
+
+        setIsSubmitting(true);
         setError('');
         setSuccess('');
 
-        if (!rating) {
-            setError('Please provide a rating.');
-            return;
-        }
-
-        if (!currentUser) {
-            setError('You must be logged in to leave a review.');
-            return;
-        }
-
         const reviewData = {
-            patientId: currentUser.id, // 4. Usa currentUser.id
+            patientId: currentUser.id,
             doctorId,
-            rating: parseInt(rating),
+            rating,
             comment,
         };
 
         try {
-            await reviewService.createReview(reviewData);
+            await api.post('/reviews', reviewData);
             setSuccess('Thank you for your review!');
-            setRating(5);
-            setComment('');
-            if (onReviewAdded) {
-                onReviewAdded();
-            }
+            setTimeout(() => {
+                onReviewAdded(); 
+            }, 1500);
         } catch (err) {
-            setError('Failed to submit review. Please try again.');
+            const errorMessage = err.response?.data?.message || 'Failed to submit review. Please try again.';
+            setError(errorMessage);
+            setIsSubmitting(false);
         }
     };
-
-    // 5. Controlla currentUser e il suo ruolo
-    if (!currentUser || currentUser.role !== 'patient') {
-        return null; 
-    }
+    
+    const Star = ({ index, rating, hoverRating, onMouseEnter, onMouseLeave, onClick }) => (
+        <i 
+            className={`bi bi-star${(hoverRating || rating) >= index ? '-fill' : ''} text-warning fs-2`}
+            onMouseEnter={() => onMouseEnter(index)}
+            onMouseLeave={onMouseLeave}
+            onClick={() => onClick(index)}
+            style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+        ></i>
+    );
 
     return (
-        <div>
-            <h4>Leave a Review</h4>
-            <form onSubmit={handleSubmit}>
-                {/* Il resto del tuo form rimane invariato... */}
-                <div>
-                    <label>Rating:</label>
-                    <select value={rating} onChange={(e) => setRating(e.target.value)}>
-                        <option value="5">5 - Excellent</option>
-                        <option value="4">4 - Very Good</option>
-                        <option value="3">3 - Good</option>
-                        <option value="2">2 - Fair</option>
-                        <option value="1">1 - Poor</option>
-                    </select>
+        <div className="add-review-form">
+            <div className="text-center mb-3">
+                <h5 className="mb-3">Rate your experience</h5>
+                <div className="d-flex justify-content-center">
+                    {[1, 2, 3, 4, 5].map(index => (
+                        <Star 
+                            key={index}
+                            index={index}
+                            rating={rating}
+                            hoverRating={hoverRating}
+                            onMouseEnter={(i) => setHoverRating(i)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={(i) => setRating(i)}
+                        />
+                    ))}
                 </div>
-                <div>
-                    <label>Comment:</label>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                    <label htmlFor="comment" className="form-label fw-bold">Leave a comment</label>
                     <textarea 
-                        value={comment} 
+                        className="form-control" 
+                        id="comment" 
+                        rows="4"
+                        value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="Share your experience..."
+                        placeholder="Describe your experience..."
+                        disabled={isSubmitting}
                     ></textarea>
                 </div>
-                <button type="submit">Submit Review</button>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                {success && <p style={{ color: 'green' }}>{success}</p>}
+
+                {error && <div className="alert alert-danger">{error}</div>}
+                {success && <div className="alert alert-success">{success}</div>}
+
+                <div className="d-grid">
+                    <button type="submit" className="btn btn-primary btn-lg" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                {' '}Submitting...
+                            </>
+                        ) : 'Submit Review'}
+                    </button>
+                </div>
             </form>
         </div>
     );

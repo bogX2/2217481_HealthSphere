@@ -8,6 +8,7 @@ import {
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import './ChatWindow.css';
+import PrescriptionUploadForm from '../prescriptions/PrescriptionUploadForm';
 
 const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
   const [messages, setMessages] = useState([]);
@@ -106,13 +107,21 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
     });
   };
 
+  // 2. Determina chi è l'altro utente
+  const otherUser = chat.participant1?.id === currentUser?.id 
+    ? chat.participant2 
+    : chat.participant1;
+
   if (loadingHistory) return <div className="chat-window">Loading messages...</div>;
   if (error) return <div className="chat-window error">{error}</div>;
 
   return (
     <div className="chat-window">
       <div className="chat-header">
-        <h3>{/* Potresti mostrare qui il nome dell'altro partecipante */}</h3>
+        {/* 3. Mostra il nome dell'altro utente */}
+        <h3>
+          Chat with: {otherUser?.firstName} {otherUser?.lastName}
+        </h3>
       </div>
       <div className="chat-messages">
         <MessageList messages={messages} currentUserId={currentUser?.id} />
@@ -120,6 +129,13 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
       </div>
       <div className="chat-input-area">
         <MessageInput onSendMessage={handleSendMessage} currentChatId={chat.id} />
+        {/* 4. Mostra il form solo se sei un dottore e l'altro utente esiste */}
+        {currentUser?.role === 'doctor' && (
+          <PrescriptionUploadForm 
+      
+            doctorId={currentUser.id} 
+          />
+        )}
       </div>
     </div>
   );
