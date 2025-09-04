@@ -15,6 +15,8 @@ import MyCollaborations from './components/relationships/MyCollaborations';
 import BookAppointment from './pages/appointments/BookAppointment';
 import ManageSlots from './pages/appointments/ManageSlots';
 import AppointmentList from './pages/appointments/AppointmentList';
+import AdminDashboard from './pages/AdminDashboard'
+import AdminUsers from './pages/AdminUsers'
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
           <Route path="/appointments/book/:doctorId" element={<BookAppointment />} />
           <Route path="/manageslots" element={<ManageSlots />} />
           <Route path="/appointmentlist" element={<AppointmentList />} />
+          <Route path="/admin_dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>
       </AuthProvider>
     </Router>

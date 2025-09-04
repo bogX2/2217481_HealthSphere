@@ -5,6 +5,7 @@ const {
   getUserProfile,
   getAllUsers,
   deactivateUser,
+  activateUser,
   getUserByIdPublic
 } = require('../controllers/userController');
 
@@ -17,7 +18,7 @@ router.put('/profile', authenticateToken, updateProfile);
 // Admin endpoints (protected + role check)
 router.get('/', authenticateToken, authorizeRole(['admin']), getAllUsers);
 router.patch('/:userId/deactivate', authenticateToken, authorizeRole(['admin']), deactivateUser);
-
+router.patch('/:userId/activate', authenticateToken, authorizeRole(['admin']), activateUser);
 // Public endpoint for other services
 router.get('/:id/public', getUserByIdPublic);
 

@@ -65,12 +65,12 @@ const getAllUsers = async (req, res) => {
     let whereCondition = {};
     if (role) whereCondition.role = role;
     if (search) {
-        whereCondition[Op.or] = [
-            { email: { [Op.iLike]: `%${search}%` } },
-            { '$profile.firstName$': { [Op.iLike]: `%${search}%` } },
-            { '$profile.lastName$': { [Op.iLike]: `%${search}%` } }
-        ];
-    }
+    whereCondition[Op.or] = [
+      { email: { [Op.iLike]: `%${search}%` } },
+      { firstName: { [Op.iLike]: `%${search}%` } },
+      { lastName: { [Op.iLike]: `%${search}%` } }
+    ];
+  }
 
     const { count, rows: users } = await User.findAndCountAll({
       where: whereCondition,
@@ -109,6 +109,22 @@ const deactivateUser = async (req, res) => {
   }
 };
 
+// Admin: activate user
+const activateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const target = await User.findByPk(userId);
+    if (!target) return res.status(404).json({ error: 'User not found' });
+
+    await User.update({ isActive: true }, { where: { id: userId } });
+
+    res.json({ message: 'User activated successfully' });
+  } catch (error) {
+    console.error('activateUser error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
 
 // --- function for user existence check ---
 const getUserByIdPublic = async (req, res) => {
@@ -135,5 +151,6 @@ module.exports = {
   getUserProfile,
   getAllUsers,
   deactivateUser,
+  activateUser,
   getUserByIdPublic
 };
