@@ -3,9 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./config/database');
 const prescriptionRoutes = require('./routes/prescriptions');
-
+const promBundle = require('express-prom-bundle');
 const app = express();
-
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 // Middleware
 app.use(cors());
 app.use(express.json());

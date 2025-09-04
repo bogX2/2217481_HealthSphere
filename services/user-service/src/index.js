@@ -6,9 +6,11 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const internalRoutes = require('./routes/internal');
 const patientRoutes = require('./routes/patientRoutes');
+const promBundle = require('express-prom-bundle');
 
 const app = express();
-
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 app.use(cors({
   origin: 'http://localhost:3001', // dominio del frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],

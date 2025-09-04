@@ -105,9 +105,9 @@ services:
       - DB_NAME=healthsphere
     depends_on:
       - postgres-db
-    volumes:
-      - ./services/review-service:/usr/src/app
-      - /usr/src/app/node_modules
+    #volumes:
+     # - ./services/review-service:/usr/src/app
+     # - /usr/src/app/node_modules
 
   document-service:
     build: ./services/document-service
@@ -135,6 +135,30 @@ services:
       - APPOINTMENT_SERVICE_URL=http://appointment-service:8083
     depends_on:
       - user-service
+  # Container per metriche dei container
+  
+  # Prometheus per raccogliere metriche
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
+
+  # Grafana per dashboard
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    ports:
+      - "3006:3000" # web UI Grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    restart: always
+
 
 volumes:
   pgdata:

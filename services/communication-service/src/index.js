@@ -5,11 +5,12 @@ const sequelize = require('./config/database');
 const chatRoutes = require('./routes/chat');
 const { initializeSocket } = require('./controllers/messageController');
 const http = require('http'); // Needed for Socket.IO
-
+const promBundle = require('express-prom-bundle');
 const internalRoutes = require('./routes/internal');
 
 const app = express();
-
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 // CORS setup (adjust origin for your frontend)
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3001',

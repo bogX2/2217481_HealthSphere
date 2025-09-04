@@ -3,12 +3,15 @@ const express = require('express');
 const sequelize = require('./config/database');
 const appointmentRoutes = require('./routes/appointments');
 const cors = require('cors');
+const promBundle = require('express-prom-bundle');
+
 
 
 
 
 const app = express();
-
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 // Import models
 const Appointment = require('./models/Appointment');
 const AppointmentSlot = require('./models/AppointmentSlot');

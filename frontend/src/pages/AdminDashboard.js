@@ -39,7 +39,7 @@ const AdminDashboard = () => {
       <div className="container mt-5 pt-5 pb-5">
         <section className="mb-5 text-center pt-5">
           <h2 className="display-5 fw-bold text-success">Admin Dashboard</h2>
-          <p className="text-muted">Gestisci utenti, medici, prestazioni e sicurezza della piattaforma</p>
+          <p className="text-muted"></p>
         </section>
 
         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
@@ -78,9 +78,10 @@ const AdminDashboard = () => {
           {/* Platform Monitoring */}
           <div className="col">
             <div
-              className="card h-100 shadow-sm option-card"
-              onClick={() => navigate('/admin/monitoring')}
-            >
+                className="card h-100 shadow-sm option-card"
+                onClick={() => window.open('http://localhost:9090/targets', '_blank')}
+              >
+
               <div className="card-body text-center d-flex flex-column justify-content-center align-items-center">
                 <GraphUp size={48} className="mb-3 text-success" />
                 <h5 className="card-title fw-bold text-primary">Platform Monitoring</h5>

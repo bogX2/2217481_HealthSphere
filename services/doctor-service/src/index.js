@@ -4,11 +4,13 @@ const cors = require('cors');
 const sequelize = require('./config/database');
 const doctorRoutes = require('./routes/doctor');
 const path = require('path');
+const promBundle = require('express-prom-bundle');
 
 const internalRoutes = require('./routes/internal');
 
 const app = express();
-
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 app.use(cors({
   origin: 'http://localhost:3001', // dominio del frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
