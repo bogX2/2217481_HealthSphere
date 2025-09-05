@@ -1,42 +1,31 @@
-const Chat = require('../models/Chat');
-const Message = require('../models/Message');
 const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
-
-// Helper function to validate if user exists (calls user-service)
-// This requires the user-service to expose an endpoint like GET /api/users/:id
 const axios = require('axios');
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8081';
+const Chat  = require('../models/Chat');
+const Message = require('../models/Message');
 
-
-// Create a chat (e.g., when doctor/patient first connect)
+// Create a new chat between two users
 exports.createChat = async (req, res) => {
   try {
-    const participant1Id = req.user.userId;
-    const participant2Id = req.body.participant2Id;
-    
-    console.log(`\n🔄 Creating chat between ${participant1Id} and ${participant2Id}`);
-    
-    // Validate participants exist
+    const participant1Id = req.user.id; // The ID of the user making the request
+    const { participant2Id } = req.body;
+
+    console.log(`\n🔄 Attempting to create a chat between ${participant1Id} and ${participant2Id}`);
+
+    // Validate inputs
     if (!participant1Id || !participant2Id) {
-      console.error('❌ Missing participant IDs');
-      return res.status(400).json({ 
-        error: 'Both participant IDs are required' 
-      });
+      console.error('❌ Missing participant ID.');
+      return res.status(400).json({ error: 'Both participant IDs are required.' });
     }
-    
+
     if (participant1Id === participant2Id) {
-      console.error('❌ Cannot create chat with yourself');
-      return res.status(400).json({ 
-        error: 'Cannot create chat with yourself' 
-      });
+      console.error('❌ User cannot create a chat with themselves.');
+      return res.status(400).json({ error: 'You cannot create a chat with yourself.' });
     }
     
-    // CRITICAL: Log the relationship validation attempt
-    console.log(`🔍 Checking relationship between ${participant1Id} and ${participant2Id}`);
-    
-    // Check if relationship exists
+    // Check if a valid relationship exists between doctor and patient before creating the chat
     try {
+      console.log(`🔍 Verifying relationship between ${participant1Id} and ${participant2Id}...`);
       const doctorServiceUrl = process.env.DOCTOR_SERVICE_URL || 'http://doctor-service:3001';
       const serviceToken = jwt.sign(
         { 
@@ -50,34 +39,30 @@ exports.createChat = async (req, res) => {
       const relationshipResponse = await axios.get(
         `${doctorServiceUrl}/api/internal/relationships/check/${participant1Id}/${participant2Id}`,
         {
-          headers: { 
-            'Authorization': `Bearer ${serviceToken}`
-          },
+          headers: { 'Authorization': `Bearer ${serviceToken}` },
           timeout: 5000
         }
       );
       
-      console.log('✅ Relationship check response:', relationshipResponse.data);
+      console.log('✅ Response from relationship check:', relationshipResponse.data);
       
       if (!relationshipResponse.data.hasRelationship) {
-        console.error('❌ No valid relationship exists');
+        console.error('❌ No valid relationship found.');
         return res.status(403).json({
-          error: 'Cannot start chat with this user. No valid relationship exists.'
+          error: 'Cannot start chat. No valid relationship exists with this user.'
         });
       }
     } catch (relationshipErr) {
-      console.error('🔥 ERROR checking relationship:');
+      console.error('🔥 ERROR during relationship verification:');
       if (relationshipErr.response) {
-        console.error(`Status: ${relationshipErr.response.status}`);
-        console.error(`Data:`, relationshipErr.response.data);
+        console.error(`Status: ${relationshipErr.response.status}, Data:`, relationshipErr.response.data);
       } else {
-        console.error(`Error message: ${relationshipErr.message}`);
+        console.error(`Message: ${relationshipErr.message}`);
       }
-      // Don't fail chat creation if relationship service is down
-      console.warn('⚠️ Proceeding with chat creation (relationship service unavailable)');
+      console.warn('⚠️ Proceeding with chat creation anyway (relationship service unavailable).');
     }
-    
-    // Check if chat already exists
+
+    // Check if a chat between these two users already exists
     const existingChat = await Chat.findOne({
       where: {
         [Op.or]: [
@@ -86,175 +71,125 @@ exports.createChat = async (req, res) => {
         ]
       }
     });
-    
+
     if (existingChat) {
-      console.log(`ℹ️ Chat already exists: ${existingChat.id}`);
-      return res.status(200).json({ 
-        chat: existingChat,
-        message: 'Chat already exists'
-      });
+      console.log(`ℹ️ Chat ${existingChat.id} already exists.`);
+      return res.status(200).json({ chat: existingChat, message: 'Chat already exists.' });
     }
-    
-    // Create new chat
-    const newChat = await Chat.create({
-      participant1Id,
-      participant2Id
-    });
-    
-    console.log(`✅ Created new chat: ${newChat.id}`);
+
+    // Create the new chat if it doesn't exist
+    const newChat = await Chat.create({ participant1Id, participant2Id });
+    console.log(`✅ New chat successfully created: ${newChat.id}`);
     res.status(201).json({ chat: newChat });
+
   } catch (err) {
-    console.error('🔥 CRITICAL ERROR creating chat:', err);
-    res.status(500).json({ 
-      error: 'Internal server error while creating chat',
-      details: err.message 
-    });
+    console.error('🔥 CRITICAL ERROR while creating chat:', err);
+    res.status(500).json({ error: 'Internal server error while creating chat.' });
   }
 };
 
-// Get chat history
+// Get the message history of a chat
 exports.getChatHistory = async (req, res) => {
   try {
     const { chatId } = req.params;
-    
-    // FIX: Use correct user ID property (id instead of userId)
-    const userId = req.user.id || req.user.userId; // Handle both formats
-    
-    // Ensure user is authorized to access this chat history
+    const userId = req.user.id;
+
     const chat = await Chat.findByPk(chatId);
     if (!chat || (chat.participant1Id !== userId && chat.participant2Id !== userId)) {
-      console.error(`Access denied: User ${userId} trying to access chat ${chatId} which belongs to ${chat?.participant1Id} and ${chat?.participant2Id}`);
-      return res.status(403).json({ 
-        error: 'Access denied to this chat history',
-        debug: {
-          userId,
-          participant1Id: chat?.participant1Id,
-          participant2Id: chat?.participant2Id
-        }
-      });
+      console.error(`Access denied: User ${userId} trying to access chat ${chatId}`);
+      return res.status(403).json({ error: 'Access denied to this chat history.' });
     }
-    
-    // Rest of the function remains the same
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
-    
+
     const messages = await Message.findAll({
       where: { chatId },
       order: [['timestamp', 'ASC']],
-      limit,
-      offset
     });
-    
+
     res.json({ messages });
   } catch (err) {
     console.error('Error fetching chat history:', err);
-    res.status(500).json({ 
-      error: 'Internal server error while fetching chat history',
-      details: err.message 
-    });
+    res.status(500).json({ error: 'Internal server error.' });
   }
 };
 
-
-// Get list of chats for a user
+// Get the list of all chats for a user
 exports.getUserChats = async (req, res) => {
   try {
-    console.log('\n🔄 Starting getUserChats...');
-    const userId = req.user.userId || req.user.id;
-    console.log('👤 User ID:', userId);
-    
-    if (!userId) {
-      return res.status(401).json({ 
-        error: 'User ID not found in authentication'
-      });
-    }
+    const userId = req.user.id;
+    console.log(`\n🔄 Fetching chats for user ${userId}...`);
 
-    // CRITICAL FIX: This line was MISSING 
     const chats = await Chat.findAll({
       where: {
-        [Op.or]: [
-          { participant1Id: userId },
-          { participant2Id: userId }
-        ],
+        [Op.or]: [{ participant1Id: userId }, { participant2Id: userId }],
       },
       order: [['updatedAt', 'DESC']]
     });
-    
-    console.log(`Found ${chats.length} chats for user ${userId}`);
-    
-    // Now chats is properly defined and can be used
-    const enrichedChats = await Promise.all(chats.map(async (chat) => {
-      const chatData = chat.get({ plain: true });
-      const otherUserId = chatData.participant1Id === userId ? 
-        chatData.participant2Id : 
-        chatData.participant1Id;
-      
-      try {
-        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
-        
-        const serviceToken = jwt.sign(
-          { 
-            service: 'communication-service',
-            permissions: ['read:user:public']
-          }, 
-          process.env.INTERNAL_SERVICE_SECRET,
-          { expiresIn: '5m' }
-        );
-        
-        const userResp = await axios.get(
-          `${userServiceUrl}/api/internal/users/${otherUserId}/public`,
-          { 
-            headers: { 
-              'Authorization': `Bearer ${serviceToken}`
-            },
-            timeout: 5000
-          }
-        );
 
-         // CORREZIONE: il backend ora invia participant1 e participant2
-        const currentUserData = (userId === chatData.participant1Id) ? userResp.data : null;
-        const otherParticipantData = (userId === chatData.participant1Id) ? null : userResp.data;
+    console.log(`Found ${chats.length} chats for user ${userId}.`);
 
-        const p1 = await axios.get(`${userServiceUrl}/api/internal/users/${chat.participant1Id}/public`, { headers: { 'Authorization': `Bearer ${serviceToken}` }});
-        const p2 = await axios.get(`${userServiceUrl}/api/internal/users/${chat.participant2Id}/public`, { headers: { 'Authorization': `Bearer ${serviceToken}` }});
+    const enrichedChats = await Promise.all(
+      chats.map(async (chat) => {
+        const chatData = chat.get({ plain: true });
+        const otherUserId = chatData.participant1Id === userId 
+          ? chatData.participant2Id 
+          : chatData.participant1Id;
         
-        
-        return {
-          ...chatData,
-          otherParticipant: userResp.data
-        };
-      } catch (err) {
-        console.error(`Error processing chat with ${otherUserId}:`, err.message);
-        return {
-          ...chatData,
-          otherParticipant: {
-            id: otherUserId,
-            firstName: 'Error',
-            lastName: 'Loading',
-            role: 'error',
-            error: err.message
-          }
-        };
-      }
-    }));
+        try {
+          // Prepare the call to get the other user's data
+          const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8081';
+          const serviceToken = jwt.sign(
+            { 
+              service: 'communication-service',
+              permissions: ['read:user:public']
+            }, 
+            process.env.INTERNAL_SERVICE_SECRET,
+            { expiresIn: '5m' }
+          );
+          
+          // Execute ONLY ONE call to get the other participant's data
+          const userResponse = await axios.get(
+            `${userServiceUrl}/api/internal/users/${otherUserId}/public`,
+            { 
+              headers: { 'Authorization': `Bearer ${serviceToken}` },
+              timeout: 5000
+            }
+          );
 
-    console.log('📤 Sending response with', enrichedChats.length, 'chats');
-    res.json({ chats: enrichedChats });
+          // Return the enriched chat data with the other user's details
+          return {
+            ...chatData,
+            otherParticipant: userResponse.data
+          };
+        } catch (err) {
+          console.error(`Error fetching details for user ${otherUserId}:`, err.message);
+          // If the call fails, still return the chat data with a placeholder user
+          return {
+            ...chatData,
+            otherParticipant: {
+              id: otherUserId,
+              firstName: 'Unknown',
+              lastName: 'User',
+              error: 'Could not load data.'
+            }
+          };
+        }
+      })
+    );
+
+    console.log(`✅ Sending ${enrichedChats.length} enriched chats.`);
+    res.json(enrichedChats);
+
   } catch (err) {
-    console.error('🔥 CRITICAL ERROR:', err);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      details: err.message 
-    });
+    console.error('🔥 CRITICAL ERROR while fetching chats:', err);
+    res.status(500).json({ error: 'Internal server error.' });
   }
 };
 
-
-
+// Check if a chat between two users already exists
 exports.checkChatExists = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
-    
+
     const chat = await Chat.findOne({
       where: {
         [Op.or]: [
@@ -263,7 +198,7 @@ exports.checkChatExists = async (req, res) => {
         ]
       }
     });
-    
+
     res.json({ exists: !!chat });
   } catch (err) {
     console.error('Error checking if chat exists:', err);

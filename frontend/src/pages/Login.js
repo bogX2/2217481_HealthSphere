@@ -2,6 +2,7 @@ import React from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
+import api from "../services/api"; // importa la tua istanza axios con interceptor
 import { useNavigate } from "react-router-dom";
 
 const LoginSchema = Yup.object().shape({
@@ -13,18 +14,24 @@ const Login = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center vh-100" style={{ backgroundColor: '#e8f7f5' }}>
-      <div className={`card shadow-lg p-5 rounded-4 text-center`} style={{ maxWidth: '600px', borderColor: 'transparent', backgroundColor: '#ffffff' }}>
-        {/* Header with logo and title */}
+    <div
+      className="d-flex flex-column justify-content-center align-items-center vh-100"
+      style={{ backgroundColor: "#e8f7f5" }}
+    >
+      <div
+        className={`card shadow-lg p-5 rounded-4 text-center`}
+        style={{ maxWidth: "600px", borderColor: "transparent", backgroundColor: "#ffffff" }}
+      >
+        {/* Header con logo e titolo */}
         <div className="d-flex align-items-center mb-5">
-  <img
-    src="/logo192.png"
-    alt="HealthSphere Logo"
-    className="rounded-circle me-3"
-    style={{ width: '60px', height: '60px', border: '3px solid #2a9d8f' }}
-  />
-  <h1 className="h4 fw-bold text-dark mb-0">HealthSphere</h1>
-</div>
+          <img
+            src="/logo192.png"
+            alt="HealthSphere Logo"
+            className="rounded-circle me-3"
+            style={{ width: "60px", height: "60px", border: "3px solid #2a9d8f" }}
+          />
+          <h1 className="h4 fw-bold text-dark mb-0">HealthSphere</h1>
+        </div>
 
         <h4 className="text-center mb-4 h3 fw-bold">Login</h4>
 
@@ -34,10 +41,20 @@ const Login = () => {
           onSubmit={async (values, { setSubmitting, setStatus }) => {
             setStatus(null);
             try {
+              // 🔹 Login con axios diretto (senza interceptor)
               const res = await axios.post("http://localhost:8081/api/auth/login", values);
+
               const token = res.data.token;
+
+              // Salvo il token
               localStorage.setItem("token", token);
+
+              // 🔹 Aggiorno anche api.js con il token
+              api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+              // Evento globale per notificare il login
               window.dispatchEvent(new Event("authChanged"));
+
               setStatus({ success: "Login avvenuto con successo!" });
               navigate("/profile");
             } catch (error) {
@@ -84,9 +101,9 @@ const Login = () => {
             className="text-primary fw-semibold"
             role="button"
             onClick={() => navigate("/register")}
-            style={{ color: '#2a9d8f', cursor: 'pointer', textDecoration: 'underline' }}
+            style={{ color: "#2a9d8f", cursor: "pointer", textDecoration: "underline" }}
           >
-            Sing up 
+            Sign up
           </span>
         </p>
       </div>

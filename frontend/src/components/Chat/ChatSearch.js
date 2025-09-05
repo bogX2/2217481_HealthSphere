@@ -15,49 +15,54 @@ const ChatSearch = ({ currentUser, onChatSelected, onBack }) => {
   }, []);
 
   const fetchCollaborations = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      let collaborations = [];
-      
-      if (currentUser.role === 'doctor') {
-        const response = await api.get('doctors/relationships/doctor');
-        collaborations = response.data.requests || [];
-      } else if (currentUser.role === 'patient') {
-        const response = await api.get('doctors/relationships/patient');
-        collaborations = response.data.relationships || [];
-      }
-      
-      // Extract the other user's details from the collaborations
-      const users = collaborations
-        .filter(collab => collab.status === 'active') // Only active relationships
-        .map(collab => {
-          if (currentUser.role === 'doctor') {
-            return {
-              ...collab.patient, // Assuming patient details are included
-              id: collab.patientId,
-              role: 'patient',
-              hasRelationship: true
-            };
-          } else {
-            return {
-              ...collab.doctor, // Assuming doctor details are included
-              id: collab.doctorId,
-              role: 'doctor',
-              hasRelationship: true
-            };
-          }
-        });
-      
-      setSearchResults(users);
-    } catch (err) {
-      console.error('Error fetching collaborations:', err);
-      setError('Failed to load your collaborations');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    setError('');
+    
+    const token = localStorage.getItem('token'); // recupera il token
+    let collaborations = [];
+    
+    if (currentUser.role === 'doctor') {
+      const response = await api.get('doctors/relationships/doctor', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      collaborations = response.data.requests || [];
+    } else if (currentUser.role === 'patient') {
+      const response = await api.get('doctors/relationships/patient', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      collaborations = response.data.relationships || [];
     }
-  };
+    
+    // estrazione utenti
+    const users = collaborations
+      .filter(collab => collab.status === 'active')
+      .map(collab => {
+        if (currentUser.role === 'doctor') {
+          return {
+            ...collab.patient,
+            id: collab.patientId,
+            role: 'patient',
+            hasRelationship: true
+          };
+        } else {
+          return {
+            ...collab.doctor,
+            id: collab.doctorId,
+            role: 'doctor',
+            hasRelationship: true
+          };
+        }
+      });
+    
+    setSearchResults(users);
+  } catch (err) {
+    console.error('Error fetching collaborations:', err);
+    setError('Failed to load your collaborations');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUserSelect = async (user) => {
     try {

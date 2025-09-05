@@ -1,4 +1,5 @@
 // frontend/src/components/Chat/ChatWindow.js
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   getSocket, 
@@ -10,7 +11,7 @@ import MessageInput from './MessageInput';
 import './ChatWindow.css';
 import PrescriptionUploadForm from '../prescriptions/PrescriptionUploadForm';
 
-const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
+const ChatWindow = ({ chat, currentUser }) => {
   const [messages, setMessages] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
@@ -56,7 +57,7 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
       }
     };
 
-    if (currentUser) fetchHistory(); // <-- fetch solo se currentUser esiste
+    if (currentUser) fetchHistory();
 
     const handleReceiveMessage = (message) => {
       if (message.chatId === chat.id) {
@@ -70,7 +71,7 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
     return () => {
       if (socket) socket.off('receiveMessage', handleReceiveMessage);
     };
-  }, [chat.id, chat, currentUser]);  // <-- dipendenza currentUser
+  }, [chat.id, chat, currentUser]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -107,10 +108,10 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
     });
   };
 
-  // 2. Determina chi è l'altro utente
-  const otherUser = chat.participant1?.id === currentUser?.id 
-    ? chat.participant2 
-    : chat.participant1;
+  // --- MODIFICA 1: Semplificato il modo di trovare l'altro utente ---
+  // Usiamo direttamente l'oggetto "otherParticipant" fornito dal backend,
+  // che contiene già tutte le informazioni del paziente.
+  const otherUser = chat.otherParticipant;
 
   if (loadingHistory) return <div className="chat-window">Loading messages...</div>;
   if (error) return <div className="chat-window error">{error}</div>;
@@ -118,7 +119,6 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
   return (
     <div className="chat-window">
       <div className="chat-header">
-        {/* 3. Mostra il nome dell'altro utente */}
         <h3>
           Chat with: {otherUser?.firstName} {otherUser?.lastName}
         </h3>
@@ -129,11 +129,13 @@ const ChatWindow = ({ chat, currentUser }) => {  // <-- currentUser come prop
       </div>
       <div className="chat-input-area">
         <MessageInput onSendMessage={handleSendMessage} currentChatId={chat.id} />
-        {/* 4. Mostra il form solo se sei un dottore e l'altro utente esiste */}
-        {currentUser?.role === 'doctor' && (
+        
+        {/* --- MODIFICA 2: Aggiunta la prop "patientId" --- */}
+        {/* Ora passiamo l'ID del paziente, preso da "otherUser", al form di upload. */}
+        {currentUser?.role === 'doctor' && otherUser && (
           <PrescriptionUploadForm 
-      
             doctorId={currentUser.id} 
+            patientId={otherUser.id}
           />
         )}
       </div>

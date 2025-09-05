@@ -17,7 +17,7 @@ const authenticateInternalService = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.INTERNAL_SERVICE_SECRET);
     
     // Optional: Verify the service name
-    const validServices = ['user-service', 'doctor-service', 'communication-service', 'appointment-service'];
+    const validServices = ['user-service', 'doctor-service', 'communication-service', 'appointment-service','review-service'];
     if (!validServices.includes(decoded.service)) {
       return res.status(403).json({ 
         error: `Invalid service: ${decoded.service}`,

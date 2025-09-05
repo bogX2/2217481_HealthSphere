@@ -7,9 +7,13 @@ const api = axios.create({
   }
 });
 
-// Add request interceptor to log requests (for debugging)
+// Add request interceptor to log requests and attach token
 api.interceptors.request.use(config => {
-  console.log('API Request:', config.url);
+  const token = localStorage.getItem('token'); // recupera il token salvato al login
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  console.log('API Request:', config.url, config.headers);
   return config;
 });
 
@@ -18,7 +22,7 @@ api.interceptors.response.use(
   response => response,
   error => {
     console.error('API Error:', {
-      url: error.config.url,
+      url: error.config?.url,
       status: error.response?.status,
       data: error.response?.data
     });

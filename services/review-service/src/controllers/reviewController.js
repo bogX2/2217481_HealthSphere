@@ -30,15 +30,15 @@ exports.getReviewsByDoctor = async (req, res) => {
                 try {
                     // 2. Crea un token di servizio sicuro
                     const serviceToken = jwt.sign(
-                        { service: 'review-service' }, 
-                        process.env.JWT_SECRET || 'your_default_secret', // Usa una chiave segreta
+                        { service: 'review-service', permissions: ['read:user:public'] }, 
+                        process.env.INTERNAL_SERVICE_SECRET, // Usa la chiave segreta corretta
                         { expiresIn: '1m' }
                     );
 
-                    // 3. Chiama lo user-service INCLUDENDO il token
+                    // 3. Chiama lo user-service INCLUDENDO il token e con l'URL corretto
                     const userServiceUrl = 'http://user-service:8081';
                     const response = await axios.get(
-                        `${userServiceUrl}/api/internal/users/${review.patientId}`,
+                        `${userServiceUrl}/api/internal/users/${review.patientId}/public`, // Aggiunto /public
                         { 
                             headers: { 'Authorization': `Bearer ${serviceToken}` } 
                         }

@@ -44,8 +44,8 @@ const ChatContainer = () => {
       if (!chatRes.ok) throw new Error('Failed to fetch user chats');
       const chatData = await chatRes.json();
 
-      setChats(chatData.chats || []);
-      setSelectedChat(chatData.chats?.[0] || null);
+      setChats(chatData || []);
+      setSelectedChat(chatData?.[0] || null);
     } catch (err) {
       console.error(err);
       setError('Failed to load your chats. Please try again later.');

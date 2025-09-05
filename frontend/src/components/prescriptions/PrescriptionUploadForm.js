@@ -15,7 +15,7 @@ const PrescriptionUploadForm = ({ patientId, doctorId }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!file) {
-            setError('Per favore, seleziona un file.');
+            setError('Please select a file.');
             return;
         }
 
@@ -31,12 +31,12 @@ const PrescriptionUploadForm = ({ patientId, doctorId }) => {
 
         try {
             await documentService.uploadPrescription(formData);
-            setSuccess('Ricetta caricata con successo!');
+            setSuccess('Prescription uploaded successfully!');
             setFile(null);
             setNotes('');
             e.target.reset();
         } catch (err) {
-            setError('Errore durante il caricamento. Riprova.');
+            setError('Error during upload. Please try again.');
             console.error(err);
         } finally {
             setIsUploading(false);
@@ -46,14 +46,20 @@ const PrescriptionUploadForm = ({ patientId, doctorId }) => {
     return (
         <div className="card mt-4">
             <div className="card-body">
-                <h5 className="card-title">Carica Ricetta</h5>
+                <h5 className="card-title">Upload Prescription</h5>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
-                        <label htmlFor="prescriptionFile" className="form-label">File Ricetta</label>
-                        <input className="form-control" type="file" id="prescriptionFile" onChange={handleFileChange} disabled={isUploading} />
+                        <label htmlFor="prescriptionFile" className="form-label">Prescription File</label>
+                        <input 
+                            className="form-control" 
+                            type="file" 
+                            id="prescriptionFile" 
+                            onChange={handleFileChange} 
+                            disabled={isUploading} 
+                        />
                     </div>
                     <div className="mb-3">
-                        <label htmlFor="notes" className="form-label">Note Aggiuntive</label>
+                        <label htmlFor="notes" className="form-label">Additional Notes</label>
                         <textarea 
                             className="form-control" 
                             id="notes" 
@@ -64,7 +70,7 @@ const PrescriptionUploadForm = ({ patientId, doctorId }) => {
                         ></textarea>
                     </div>
                     <button type="submit" className="btn btn-success" disabled={isUploading}>
-                        {isUploading ? 'Caricamento...' : 'Carica'}
+                        {isUploading ? 'Uploading...' : 'Upload'}
                     </button>
                     {error && <div className="alert alert-danger mt-2">{error}</div>}
                     {success && <div className="alert alert-success mt-2">{success}</div>}
