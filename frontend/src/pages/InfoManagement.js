@@ -160,7 +160,7 @@ const InfoManagement = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:8082/api/doctor/profile-photo", formData, {
+      await axios.post("http://localhost:8082/api/doctors/documents", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -184,7 +184,7 @@ const InfoManagement = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:8082/api/doctor/documents", formData, {
+      await axios.post("http://localhost:8082/api/doctors/documents", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -302,25 +302,12 @@ const InfoManagement = () => {
               </div>
             </div>
 
-            {/* 2️⃣ Profile Photo Upload */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-body">
-                <h5 className="card-title fw-bold">2. Profile Photo</h5>
-                <form onSubmit={handlePhotoSubmit} className="row g-3">
-                  <div className="col-md-8">
-                    <input type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files[0])} className="form-control rounded-pill" />
-                  </div>
-                  <div className="col-md-4 d-grid">
-                    <button type="submit" className="btn btn-secondary btn-lg rounded-pill">Upload Photo</button>
-                  </div>
-                </form>
-              </div>
-            </div>
+            
 
             {/* 3️⃣ Document Upload */}
             <div className="card shadow-sm mb-4">
               <div className="card-body">
-                <h5 className="card-title fw-bold">3. Upload Documents</h5>
+                <h5 className="card-title fw-bold">2. Upload Documents</h5>
                 <form onSubmit={handleDocumentSubmit} className="row g-3">
                   <div className="col-md-8">
                     <input type="file" onChange={(e) => setDocumentFile(e.target.files[0])} className="form-control rounded-pill" />

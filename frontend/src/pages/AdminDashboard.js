@@ -92,21 +92,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Security & Privacy */}
-          <div className="col">
-            <div
-              className="card h-100 shadow-sm option-card"
-              onClick={() => navigate('/admin/security')}
-            >
-              <div className="card-body text-center d-flex flex-column justify-content-center align-items-center">
-                <ShieldLock size={48} className="mb-3 text-success" />
-                <h5 className="card-title fw-bold text-primary">Security & Privacy</h5>
-                <p className="card-text text-muted">
-                  Configure and update security policies and permissions.
-                </p>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
 
