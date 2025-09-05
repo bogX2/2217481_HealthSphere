@@ -11,7 +11,8 @@ const {
   searchDoctors,
   verifyDoctor,
   getDoctor,
-  getDoctorByUserId
+  getDoctorByUserId,
+  listPendingDoctors
 } = require('../controllers/doctorController');
 const relationshipController = require('../controllers/relationshipController');
 
@@ -33,7 +34,7 @@ const upload = multer({ storage });
 
 // public search
 router.get('/search', searchDoctors);
-
+router.get('/pending', authenticateToken, authorizeRole(['admin']), listPendingDoctors);
 // public get profile
 router.get('/:doctorId', getDoctor);
 
@@ -74,7 +75,9 @@ router.get('/patient', authenticateToken, authorizeRole(['patient', 'admin']),
 
  router.get('/user/:userId', authenticateToken, getDoctorByUserId);
 
+
 // Allow service-to-service calls for profile creation
 //router.post('/', serviceAuth, upsertDoctor);
+
 
 module.exports = router;

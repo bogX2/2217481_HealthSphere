@@ -17,6 +17,7 @@ import ManageSlots from './pages/appointments/ManageSlots';
 import AppointmentList from './pages/appointments/AppointmentList';
 import AdminDashboard from './pages/AdminDashboard'
 import AdminUsers from './pages/AdminUsers'
+import DoctorVerification from './pages/DoctorVerification';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Route path="/appointmentlist" element={<AppointmentList />} />
           <Route path="/admin_dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path = "/admin/doctor-verification" element={<DoctorVerification/>} />
         </Routes>
       </AuthProvider>
     </Router>

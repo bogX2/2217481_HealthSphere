@@ -13,7 +13,7 @@ const metricsMiddleware = promBundle({ includeMethod: true });
 app.use(metricsMiddleware);
 app.use(cors({
   origin: 'http://localhost:3001', // dominio del frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 

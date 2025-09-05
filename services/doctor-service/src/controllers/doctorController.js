@@ -65,6 +65,21 @@ const listDocuments = async (req, res) => {
   }
 };
 
+const listPendingDoctors = async (req, res) => {
+  try {
+    // Trova tutti i medici con status 'pending'
+    const doctors = await Doctor.findAll({
+      where: { verificationStatus: 'pending' },
+      order: [['createdAt', 'DESC']] // opzionale: i più recenti prima
+    });
+
+    res.json({ doctors });
+  } catch (err) {
+    console.error("Errore in listPendingDoctors:", err);
+    res.status(500).json({ error: "Errore interno nel caricamento dei medici" });
+  }
+};
+
 // ---- Set availability ----
 const setAvailability = async (req, res) => {
   try {
@@ -320,5 +335,6 @@ module.exports = {
   searchDoctors,
   verifyDoctor,
   getDoctor,
-  getDoctorByUserId
+  getDoctorByUserId,
+  listPendingDoctors
 };
