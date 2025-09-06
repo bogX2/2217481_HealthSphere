@@ -11,7 +11,8 @@ import {
     Calendar2Check, 
     ChatDotsFill, 
     ClockHistory, 
-    Calendar2Range 
+    Calendar2Range,
+    FileText
 } from 'react-bootstrap-icons';
 
 const Profile = () => {
@@ -123,6 +124,17 @@ const Profile = () => {
                                         </div>
                                     </div>
                                 </div>
+                                 {/* NUOVA CARD PER LE RICETTE */}
+                    <div className="col">
+                        <div className="card h-100 shadow-sm option-card" onClick={() => navigate('/prescriptions')}>
+                            <div className="card-body text-center d-flex flex-column justify-content-center align-items-center">
+                                <FileText size={48} className="mb-3 text-success" />
+                                <h5 className="card-title fw-bold text-primary">My Prescriptions</h5>
+                                <p className="card-text text-muted">View and download your prescriptions.</p>
+                            </div>
+                        </div>
+                    </div>
+                                
                             </>
                         )}
 
